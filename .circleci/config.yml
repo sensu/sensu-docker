@@ -25,12 +25,18 @@ commands:
       - when:
           condition: << pipeline.parameters.target_workflow >>
           steps:
-            - run: echo 'export TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>' >> $BASH_ENV
+            - run:
+                name: Set TARGET_WORKFLOW environment variable
+                command: >
+                  echo 'export
+                  TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>'
+                  >> $BASH_ENV
       - when:
           condition:
             not: << pipeline.parameters.target_workflow >>
           steps:
             - run:
+                name: Fetch successful jobs for << parameters.branch >> branch
                 environment:
                   BASE_URL: https://circleci.com/api/v1.1/project
                   SLUG: gh/sensu/sensu-enterprise-go
@@ -38,12 +44,21 @@ commands:
                 command: >
                   curl -fsSLo builds.json -H "Circle-Token: $CIRCLE_TOKEN"
                   $BASE_URL/$SLUG/tree/<< parameters.branch >>$QUERY_PARAMS
-            - run: |
-                workflow=$(jq -r \
-                '[.[] | select(.workflows.workflow_name != "nightly")][0]
-                .workflows.workflow_id' \
-                builds.json)
-                echo "export TARGET_WORKFLOW=$workflow" >> $BASH_ENV
+            - run:
+                name: Set TARGET_WORKFLOW environment variable
+                command: |
+                  workflow=$(jq -r \
+                  '[.[] | select(.workflows.workflow_name != "nightly")][0]
+                  .workflows.workflow_id' \
+                  builds.json)
+                  echo "export TARGET_WORKFLOW=$workflow" >> $BASH_ENV
+      - run:
+          name: Ensure TARGET_WORKFLOW is set
+          command: |
+            if ["x$TARGET_WORKFLOW" = "x"]; then
+            echo "TARGET_WORKFLOW is empty"
+            exit 1
+            fi
   fetch-job-artifacts:
     description: Fetches a job's artifacts for a given workflow & job name
     parameters:
