@@ -229,7 +229,7 @@ workflows:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
           path: dockerfiles/alpine
-          tag: "<< parameters.tag_name >>-alpine"
+          tag: "<< pipeline.parameters.tag_name >>-alpine"
           pre-steps:
             - checkout
             - buildx/install
@@ -270,7 +270,7 @@ workflows:
           name: build-rhel7
           platforms: linux/amd64
           path: dockerfiles/redhat7
-          tag: "<< parameters.tag_name >>-rhel7"
+          tag: "<< pipeline.parameters.tag_name >>-rhel7"
           pre-steps:
             - checkout
             - buildx/install
