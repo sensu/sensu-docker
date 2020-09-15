@@ -1,0 +1,265 @@
+version: 2.1
+
+orbs:
+  docker: circleci/docker@1.4.0
+  buildx: amdprophet/docker-buildx@dev:second
+
+parameters:
+  target_workflow:
+    type: string
+    default: ""
+  sensu_version:
+    type: string
+    default: "6.0.0"
+  build_number:
+    type: integer
+    default: << pipeline.number >>
+
+commands:
+  setenv-target-workflow:
+    parameters:
+      branch:
+        type: string
+        default: "remove-packaging"
+    steps:
+      - when:
+          condition: << pipeline.parameters.target_workflow >>
+          steps:
+            - run: echo 'export TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>' >> $BASH_ENV'
+      - when:
+          condition:
+            not: << pipeline.parameters.target_workflow >>
+          steps:
+            - run:
+                environment:
+                  BASE_URL: https://circleci.com/api/v1.1/project
+                  SLUG: gh/sensu/sensu-enterprise-go
+                  QUERY_PARAMS: ?filter=successful
+                command: >
+                  curl -fsSLo builds.json -H "Circle-Token: $CIRCLE_TOKEN"
+                  $BASE_URL/$SLUG/tree/<< parameters.branch >>$QUERY_PARAMS
+            - run: |
+                workflow=$(jq -r \
+                '[.[] | select(.workflows.workflow_name != "nightly")][0]
+                .workflows.workflow_id' \
+                builds.json)
+                echo "export TARGET_WORKFLOW=$workflow" >> $BASH_ENV
+  fetch-job-artifacts:
+    description: Fetches a job's artifacts for a given workflow & job name
+    parameters:
+      workflow:
+        type: string
+        default: "$TARGET_WORKFLOW"
+      job:
+        type: string
+      destination:
+        type: string
+        default: ""
+      filter:
+        type: string
+        default: ""
+    steps:
+      - run:
+          name: Fetch artifacts for << parameters.job >>
+          command: >
+            ./scripts/circleci-fetch-artifacts.sh << parameters.workflow >>
+            << parameters.job >> << parameters.destination >>
+            << parameters.filter >>
+  extract-tarballs:
+    description: Extracts all tarballs in a given directory
+    parameters:
+      working_directory:
+        type: string
+    steps:
+      - run:
+          name: Extract tarballs in << parameters.working_directory >>
+          working_directory: << parameters.working_directory >>
+          command: |
+            find -type f -name '*.tar.gz' -exec echo "extracting: {}" \; -exec tar -zxf {} \;
+  verify-binary:
+    parameters:
+      working_directory:
+        type: string
+      binary:
+        type: string
+    steps:
+      - run:
+          name: Verify file type of << parameters.working_directory >>/<< parameters.binary >>
+          working_directory: << parameters.working_directory >>
+          command: >
+              if ! file << parameters.binary >> | grep executable; then
+                file << parameters.binary >>
+                cat << parameters.binary >>
+              fi
+      - run:
+          name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
+          working_directory: << parameters.working_directory >>
+          command: ./<< parameters.binary >> version
+  unsupported-binary:
+    parameters:
+      working_directory:
+        type: string
+      binary:
+        type: string
+    steps:
+      - run:
+          name: Create unsupported binary << parameters.working_directory >>/<< parameters.binary >>
+          working_directory: << parameters.working_directory >>
+          command: >
+            printf "#!/bin/sh\necho \"<< parameters.binary >> is not
+            available for this platform\nexit 1\"\"" > << parameters.binary >>
+      - run:
+          name: Add execute bit to << parameters.working_directory >>/<< parameters.binary >>
+          working_directory: << parameters.working_directory >>
+          command: chmod a+x << parameters.binary >>
+  verify-or-unsupported:
+    parameters:
+      working_directory:
+        type: string
+      binary:
+        type: string
+      supported:
+        type: boolean
+    steps:
+      - when:
+          condition: << parameters.supported >>
+          steps:
+            - verify-binary:
+                working_directory: << parameters.working_directory >>
+                binary: << parameters.binary >>
+      - unless:
+          condition: << parameters.supported >>
+          steps:
+            - unsupported-binary:
+                working_directory: << parameters.working_directory >>
+                binary: << parameters.binary >>
+  fetch-licenses:
+    steps:
+      - fetch-job-artifacts:
+          job: store-licenses
+          destination: target/licenses
+  fetch-and-verify-binaries:
+    parameters:
+      job:
+        type: string
+      target:
+        type: string
+      destination:
+        type: string
+      supports_agent:
+        type: boolean
+        default: true
+      supports_backend:
+        type: boolean
+        default: false
+      supports_cli:
+        type: boolean
+        default: true
+    steps:
+      - fetch-job-artifacts:
+          filter: ".tar.gz"
+          job: << parameters.job >>
+          destination: << parameters.destination >>
+      - extract-tarballs:
+          working_directory: << parameters.destination >>
+      - verify-or-unsupported:
+          working_directory: << parameters.destination >>
+          binary: sensu-agent
+          supported: << parameters.supports_agent >>
+      - verify-or-unsupported:
+          working_directory: << parameters.destination >>
+          binary: sensu-backend
+          supported: << parameters.supports_backend >>
+      - verify-or-unsupported:
+          working_directory: << parameters.destination >>
+          binary: sensuctl
+          supported: << parameters.supports_cli >>
+      - verify-binary:
+          working_directory: << parameters.destination >>
+          binary: sensu-agent
+
+jobs:
+  build-docker:
+    executor:
+      name: docker/machine
+      image: "ubuntu-1604:202007-01"
+      dlc: true
+    parameters:
+      platforms:
+        type: string
+      path:
+        type: string
+      image:
+        type: string
+        default: "sensu/sensu-ci"
+      tag:
+        type: string
+    steps:
+      - run:
+          name: Login to Docker
+          command: echo $DOCKER_PASSWORD | docker login --username $DOCKER_LOGIN --password-stdin
+      - docker/build:
+          image: << parameters.image >>
+          tag: << parameters.tag >>
+          path: << parameters.path >>
+          extra_build_args: --label "version=<< pipeline.parameters.sensu_version >>" --label "release=<< pipeline.parameters.build_number >>" --push --platform "<< parameters.platforms >>"
+
+workflows:
+  docker:
+    jobs:
+      - build-docker:
+          name: build-alpine
+          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
+          path: dockerfiles/alpine
+          tag: ${CIRCLE_TAG:-$CIRCLE_SHA1}-alpine
+          pre-steps:
+            - checkout
+            - buildx/install
+            - setenv-target-workflow
+            - fetch-licenses
+            - fetch-and-verify-binaries:
+                job: build-linux_386
+                target: linux_386
+                destination: target/linux/386
+            - fetch-and-verify-binaries:
+                job: build-linux_amd64
+                destination: target/linux/amd64
+                target: linux_amd64
+                supports_backend: true
+            - fetch-and-verify-binaries:
+                job: build-linux_arm64
+                destination: target/linux/arm64
+                target: linux_arm64
+                supports_backend: true
+            - fetch-and-verify-binaries:
+                job: build-linux_arm_6
+                destination: target/linux/arm/v6
+                target: linux_arm_6
+            - fetch-and-verify-binaries:
+                job: build-linux_arm_7
+                destination: target/linux/arm/v7
+                target: linux_arm_7
+            - fetch-and-verify-binaries:
+                job: build-linux_ppc64le
+                destination: target/linux/ppc64le
+                target: linux_ppc64le
+                supports_backend: true
+            - fetch-and-verify-binaries:
+                job: build-linux_s390x
+                destination: target/linux/s390x
+                target: linux_s390x
+      - build-docker:
+          name: build-rhel7
+          platforms: linux/amd64
+          path: dockerfiles/redhat7
+          tag: ${CIRCLE_TAG:-$CIRCLE_SHA1}-rhel7
+          pre-steps:
+            - checkout
+            - buildx/install
+            - setenv-target-workflow
+            - fetch-licenses
+            - fetch-and-verify-binaries:
+                job: build-linux_amd64
+                destination: target/linux/amd64
+                target: linux_amd64
+                supports_backend: true
