@@ -8,6 +8,9 @@ parameters:
   target_workflow:
     type: string
     default: ""
+  tag_name:
+    type: string
+    default: "${CIRCLE_TAG:-$CIRCLE_SHA1}"
   sensu_version:
     type: string
     default: "6.0.0"
@@ -226,7 +229,7 @@ workflows:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
           path: dockerfiles/alpine
-          tag: ${CIRCLE_TAG:-$CIRCLE_SHA1}-alpine
+          tag: "<< parameters.tag_name >>-alpine"
           pre-steps:
             - checkout
             - buildx/install
@@ -267,7 +270,7 @@ workflows:
           name: build-rhel7
           platforms: linux/amd64
           path: dockerfiles/redhat7
-          tag: ${CIRCLE_TAG:-$CIRCLE_SHA1}-rhel7
+          tag: "<< parameters.tag_name >>-rhel7"
           pre-steps:
             - checkout
             - buildx/install

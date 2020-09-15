@@ -32,6 +32,13 @@ When value is set to an empty string the `circleci-fetch-artifacts.sh` script
 uses the workflow id of the latest successful build for the master branch in
 our internal commercial repository.
 
+### tag_name
+
+**Type:** `string`
+**Default:** `"${CIRCLE_TAG:-$CIRCLE_SHA1}"`
+
+The base tag name to use for Docker images.
+
 ### sensu_version
 
 **Type:** `string`
