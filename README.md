@@ -9,7 +9,7 @@ trigger a build replace the values in the following example and run it:
 ```sh
 jsonParams='{"target_workflow":"",'
 jsonParams+='"sensu_version":"6.0.0",'
-jsonParams+='"build_number":1'
+jsonParams+='"build_number":1}'
 
 curl -fL -X POST -H 'Content-Type: application/json' \
 -H 'Accept: application/json' \
