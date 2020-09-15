@@ -25,7 +25,7 @@ commands:
       - when:
           condition: << pipeline.parameters.target_workflow >>
           steps:
-            - run: echo 'export TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>' >> $BASH_ENV'
+            - run: echo 'export TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>' >> $BASH_ENV
       - when:
           condition:
             not: << pipeline.parameters.target_workflow >>
