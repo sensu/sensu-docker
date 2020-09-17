@@ -8,17 +8,36 @@ parameters:
   target_workflow:
     type: string
     default: ""
-  tag_name:
-    type: string
-    default: "${CIRCLE_TAG:-$CIRCLE_SHA1}"
-  sensu_version:
-    type: string
-    default: "6.0.0"
-  build_number:
-    type: integer
-    default: << pipeline.number >>
 
 commands:
+  create-target-directory:
+    steps:
+      - run:
+          name: Create target directory
+          command: mkdir -pv target
+  setenv-from-file:
+    parameters:
+      variable-name:
+        type: env_var_name
+      path:
+        type: string
+    steps:
+      - run:
+          name: Set << parameters.variable-name >> environment variable
+          command: >
+            echo "export
+            << parameters.variable-name >>=$(cat << parameters.path >> | tr -d
+            '\n')" >> $BASH_ENV
+      - run:
+          name: Ensure << parameters.variable-name >> is set
+          command: |
+            if [ "x${<< parameters.variable-name >>}" = "x" ]; then
+            echo "<< parameters.variable-name >> is empty"
+            exit 1
+            fi
+      - run:
+          name: Print << parameters.variable-name >>
+          command: echo $<< parameters.variable-name >>
   setenv-target-workflow:
     parameters:
       branch:
@@ -83,6 +102,42 @@ commands:
             ./scripts/circleci-fetch-artifacts.sh << parameters.workflow >>
             << parameters.job >> << parameters.destination >>
             << parameters.filter >>
+  setup-metadata:
+    description: Fetches metadata files and sets environment variables
+    parameters:
+      target:
+        type: string
+    steps:
+      - fetch-job-artifacts:
+          filter: "commit-date"
+          job: build-<< parameters.target >>
+      - fetch-job-artifacts:
+          filter: "version"
+          job: build-<< parameters.target >>
+      - fetch-job-artifacts:
+          filter: "build-number"
+          job: build-<< parameters.target >>
+      - fetch-job-artifacts:
+          filter: "git-revision"
+          job: build-<< parameters.target >>
+      - fetch-job-artifacts:
+          filter: "git-branch"
+          job: build-<< parameters.target >>
+      - setenv-from-file:
+          variable-name: COMMIT_DATE
+          path: target/commit-date
+      - setenv-from-file:
+          variable-name: SENSU_VERSION
+          path: target/version
+      - setenv-from-file:
+          variable-name: BUILD_NUMBER
+          path: target/build-number
+      - setenv-from-file:
+          variable-name: TARGET_REVISION
+          path: target/git-revision
+      - setenv-from-file:
+          variable-name: TARGET_BRANCH
+          path: target/git-branch
   extract-tarballs:
     description: Extracts all tarballs in a given directory
     parameters:
@@ -220,7 +275,7 @@ jobs:
           image: << parameters.image >>
           tag: << parameters.tag >>
           path: << parameters.path >>
-          extra_build_args: --label "version=<< pipeline.parameters.sensu_version >>" --label "release=<< pipeline.parameters.build_number >>" --push --platform "<< parameters.platforms >>"
+          extra_build_args: --label "version=$SENSU_VERSION" --label "release=$BUILD_NUMBER" --push --platform "<< parameters.platforms >>"
 
 workflows:
   docker:
@@ -229,11 +284,14 @@ workflows:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
           path: dockerfiles/alpine
-          tag: "<< pipeline.parameters.tag_name >>-alpine"
+          tag: "$TARGET_BRANCH-alpine,$TARGET_REVISION-alpine"
           pre-steps:
             - checkout
             - buildx/install
+            - create-target-directory
             - setenv-target-workflow
+            - setup-metadata:
+                target: linux_amd64
             - fetch-licenses
             - fetch-and-verify-binaries:
                 job: build-linux_386
@@ -270,11 +328,14 @@ workflows:
           name: build-rhel7
           platforms: linux/amd64
           path: dockerfiles/redhat7
-          tag: "<< pipeline.parameters.tag_name >>-rhel7"
+          tag: "$TARGET_BRANCH-rhel7,$TARGET_REVISION-rhel7"
           pre-steps:
             - checkout
             - buildx/install
+            - create-target-directory
             - setenv-target-workflow
+            - setup-metadata:
+                target: linux_amd64
             - fetch-licenses
             - fetch-and-verify-binaries:
                 job: build-linux_amd64
