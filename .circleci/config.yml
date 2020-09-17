@@ -91,7 +91,7 @@ commands:
         type: string
       destination:
         type: string
-        default: ""
+        default: "target"
       filter:
         type: string
         default: ""
