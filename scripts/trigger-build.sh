@@ -7,7 +7,6 @@ circleToken="${CIRCLE_TOKEN:-}"
 targetWorkflow="${TARGET_WORKFLOW:-}"
 targetBranch="${TARGET_BRANCH:-}"
 branch="${BRANCH:-main}"
-publish="${PUBLISH:-true}"
 
 if [ "x${circleToken}" = "x" ]; then
     echo "CIRCLE_TOKEN must be set" >&2
