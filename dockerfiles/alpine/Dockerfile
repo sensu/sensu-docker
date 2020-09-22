@@ -48,8 +48,8 @@ VOLUME /var/lib/sensu
 EXPOSE 2379 2380 8080 8081 3000
 
 RUN apk add --no-cache ca-certificates dumb-init && \
-    ln -sf /opt/sensu/bin/sensu-entrypoint.sh /usr/local/bin/sensu-agent && \
-    ln -sf /opt/sensu/bin/sensu-entrypoint.sh /usr/local/bin/sensu-backend && \
+    ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
+    ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-backend && \
     ln -sf /opt/sensu/bin/sensuctl /usr/local/bin/sensuctl
 
 COPY --from=etcdctl-fetch etcdctl /usr/local/bin/etcdctl

@@ -56,8 +56,8 @@ esac; \
 curl -L -o /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && \
 chmod +x /usr/bin/dumb-init
 
-RUN ln -sf /opt/sensu/bin/sensu-entrypoint.sh /usr/local/bin/sensu-agent && \
-  ln -sf /opt/sensu/bin/sensu-entrypoint.sh /usr/local/bin/sensu-backend && \
+RUN ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
+  ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-backend && \
   ln -sf /opt/sensu/bin/sensuctl /usr/local/bin/sensuctl
 
 COPY target/licenses /licenses

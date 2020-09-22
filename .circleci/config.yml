@@ -243,6 +243,19 @@ commands:
       - verify-binary:
           working_directory: << parameters.destination >>
           binary: sensu-agent
+  docker-run-command:
+    parameters:
+      image:
+        type: string
+        default: "sensu/sensu-ci"
+      tag:
+        type: string
+      command:
+        type: string
+    steps:
+      - run: >
+          docker run --rm << parameters.image >>:<< parameters.tag >>
+          sh -c "<< parameters.command >>"
 
 jobs:
   build-docker:
@@ -317,6 +330,19 @@ workflows:
                 job: build-linux_s390x
                 destination: target/linux/s390x
                 target: linux_s390x
+          post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-alpine"
+                command: sensu-agent version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-alpine"
+                command: sensu-backend version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-alpine"
+                command: sensuctl version
       - build-docker:
           name: build-rhel7
           platforms: linux/amd64
@@ -335,3 +361,16 @@ workflows:
                 destination: target/linux/amd64
                 target: linux_amd64
                 supports_backend: true
+          post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel7"
+                command: sensu-agent version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel7"
+                command: sensu-backend version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel7"
+                command: sensuctl version
