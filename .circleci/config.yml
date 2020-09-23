@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   docker: circleci/docker@1.4.0
-  buildx: amdprophet/docker-buildx@dev:second
+  buildx: sensu/docker-buildx@dev:first
 
 parameters:
   target_workflow:
