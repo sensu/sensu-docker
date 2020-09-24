@@ -42,7 +42,7 @@ commands:
     parameters:
       branch:
         type: string
-        default: "remove-packaging"
+        default: "master"
     steps:
       - when:
           condition: << pipeline.parameters.target_workflow >>
