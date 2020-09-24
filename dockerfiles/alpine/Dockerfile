@@ -59,4 +59,19 @@ COPY target/$TARGETPLATFORM/sensu-agent /opt/sensu/bin/sensu-agent
 COPY target/$TARGETPLATFORM/sensuctl /opt/sensu/bin/sensuctl
 COPY entrypoint.sh /opt/sensu/bin/entrypoint.sh
 
+RUN addgroup -S sensu
+RUN adduser -DHS sensu -G sensu -h /var/lib/sensu
+
+RUN mkdir -pv /etc/sensu
+RUN mkdir -pv /var/cache/sensu
+RUN mkdir -pv /var/lib/sensu
+RUN mkdir -pv /var/log/sensu
+RUN mkdir -pv /var/run/sensu
+
+RUN chown -R sensu:sensu /etc/sensu
+RUN chown -R sensu:sensu /var/cache/sensu
+RUN chown -R sensu:sensu /var/lib/sensu
+RUN chown -R sensu:sensu /var/log/sensu
+RUN chown -R sensu:sensu /var/run/sensu
+
 CMD ["sensu-backend"]
