@@ -134,7 +134,7 @@ commands:
       - run:
           name: Set TARGET_BRANCH_NO_SLASHES
           command: >
-            echo "export TARGET_BRANCH_NO_SLASHES=${TARGET_BRANCH//\\//_}" >>
+            echo "export TARGET_BRANCH_NO_SLASHES=${TARGET_BRANCH//\//_}" >>
             $BASH_ENV
   extract-tarballs:
     description: Extracts all tarballs in a given directory

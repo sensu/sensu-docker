@@ -27,7 +27,7 @@ if [ "x${targetWorkflow}" = "x" ]; then
 fi
 
 jsonBody='{"branch":"'$branch'","parameters":{'
-jsonBody+='"target_workflow":"'$targetWorkflow'",'
+jsonBody+='"target_workflow":"'$targetWorkflow'"'
 jsonBody+='}}'
 
 extraOpts="-fsS"
