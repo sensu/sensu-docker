@@ -61,7 +61,6 @@ commands:
                 name: Find target workflow for << parameters.branch >> branch
                 environment:
                   TARGET_BRANCH: << parameters.branch >>
-                  TARGET_BRANCH_NO_SLASHES: "${TARGET_BRANCH//\\//_}"
                 command: |
                   ./scripts/find-branch-workflow.sh > workflow
                   echo 'export TARGET_WORKFLOW="'$(cat workflow)'"' >> $BASH_ENV
@@ -132,6 +131,11 @@ commands:
       - setenv-from-file:
           variable-name: TARGET_BRANCH
           path: target/git-branch
+      - run:
+          name: Set TARGET_BRANCH_NO_SLASHES
+          command: >
+            echo "export TARGET_BRANCH_NO_SLASHES=${TARGET_BRANCH//\\//_}" >>
+            $BASH_ENV
   extract-tarballs:
     description: Extracts all tarballs in a given directory
     parameters:
