@@ -61,6 +61,7 @@ commands:
                 name: Find target workflow for << parameters.branch >> branch
                 environment:
                   TARGET_BRANCH: << parameters.branch >>
+                  TARGET_BRANCH_NO_SLASHES: "${TARGET_BRANCH//\//_}"
                 command: |
                   ./scripts/find-branch-workflow.sh > workflow
                   echo 'export TARGET_WORKFLOW="'$(cat workflow)'"' >> $BASH_ENV
@@ -290,7 +291,7 @@ workflows:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
           path: dockerfiles/alpine
-          tag: "$TARGET_BRANCH-alpine,$TARGET_REVISION-alpine"
+          tag: "$TARGET_BRANCH_NO_SLASHES-alpine,$TARGET_REVISION-alpine"
           pre-steps:
             - checkout
             - buildx/install
@@ -347,7 +348,7 @@ workflows:
           name: build-rhel7
           platforms: linux/amd64
           path: dockerfiles/redhat7
-          tag: "$TARGET_BRANCH-rhel7,$TARGET_REVISION-rhel7"
+          tag: "$TARGET_BRANCH_NO_SLASHES-rhel7,$TARGET_REVISION-rhel7"
           pre-steps:
             - checkout
             - buildx/install
