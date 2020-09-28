@@ -70,4 +70,18 @@ COPY --from=etcdctl-fetch etcdctl /usr/local/bin/etcdctl
 COPY --from=rhel-tools /usr/lib64/libpcap.so.1 /usr/lib64/libpcap.so.1
 COPY --from=rhel-tools /usr/bin/nc /usr/local/bin/nc
 
+RUN adduser -rd /var/lib/sensu -s /bin/nologin sensu
+
+RUN mkdir -pv /etc/sensu
+RUN mkdir -pv /var/cache/sensu
+RUN mkdir -pv /var/lib/sensu
+RUN mkdir -pv /var/log/sensu
+RUN mkdir -pv /var/run/sensu
+
+RUN chown -R sensu:sensu /etc/sensu
+RUN chown -R sensu:sensu /var/cache/sensu
+RUN chown -R sensu:sensu /var/lib/sensu
+RUN chown -R sensu:sensu /var/log/sensu
+RUN chown -R sensu:sensu /var/run/sensu
+
 CMD ["sensu-backend"]
