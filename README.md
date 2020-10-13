@@ -18,7 +18,7 @@ Environment Variable | Default Value | Description
 `CIRCLE_TOKEN` | | Your CircleCI API Token.
 `TARGET_WORKFLOW` | | The CircleCI workflow ID of the [sensu-enterprise-go][2] build to build packages for.
 `TARGET_BRANCH` | | The git branch of [sensu-enterprise-go][1] to build packages for.
-`BRANCH` | `master` | The branch of this repository to trigger the CI build with.
+`BRANCH` | `main` | The branch of this repository to trigger the CI build with.
 
 ### Trigger a build for a workflow
 
@@ -51,5 +51,5 @@ The remote workflow id of the desired build. It is used to fetch the build
 artifacts from each of the required jobs in the remote workflow.
 
 When value is set to an empty string the `circleci-fetch-artifacts.sh` script
-uses the workflow id of the latest successful build for the master branch in
+uses the workflow id of the latest successful build for the main branch in
 our internal commercial repository.

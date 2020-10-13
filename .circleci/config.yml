@@ -42,7 +42,7 @@ commands:
     parameters:
       branch:
         type: string
-        default: "master"
+        default: "main"
     steps:
       - when:
           condition: << pipeline.parameters.target_workflow >>
