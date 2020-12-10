@@ -1,4 +1,4 @@
-FROM alpine:3.8 as etcdctl-fetch
+FROM alpine:3.12 as etcdctl-fetch
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
@@ -24,7 +24,7 @@ esac
 
 RUN chmod +x /etcdctl
 
-FROM alpine:3.8
+FROM alpine:3.12
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
