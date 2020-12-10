@@ -3,7 +3,7 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.11/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.11/community\n" > /etc/apk/repositories
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
 RUN apk add --no-cache ca-certificates curl
 
 RUN export TARGET_ARCH=$(apk --print-arch) && \
@@ -48,7 +48,7 @@ VOLUME /var/lib/sensu
 
 EXPOSE 2379 2380 8080 8081 3000
 
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.11/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.11/community\n" > /etc/apk/repositories
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
 RUN apk add --no-cache ca-certificates dumb-init && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-backend && \
