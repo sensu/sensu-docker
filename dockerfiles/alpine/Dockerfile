@@ -1,9 +1,10 @@
-FROM alpine:3.8 as etcdctl-fetch
+FROM alpine:3.12 as etcdctl-fetch
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
-RUN apk add --no-cache curl
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
+RUN apk add --no-cache ca-certificates curl
 
 RUN export TARGET_ARCH=$(apk --print-arch) && \
 case "$TARGET_ARCH" in \
@@ -24,7 +25,7 @@ esac
 
 RUN chmod +x /etcdctl
 
-FROM alpine:3.8
+FROM alpine:3.12
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
@@ -47,6 +48,7 @@ VOLUME /var/lib/sensu
 
 EXPOSE 2379 2380 8080 8081 3000
 
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
 RUN apk add --no-cache ca-certificates dumb-init && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-backend && \
