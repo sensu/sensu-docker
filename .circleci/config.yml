@@ -286,7 +286,7 @@ jobs:
           image: << parameters.image >>
           tag: << parameters.tag >>
           path: << parameters.path >>
-          extra_build_args: --network=host --label "version=$SENSU_VERSION" --label "release=$BUILD_NUMBER" --push --platform "<< parameters.platforms >>"
+          extra_build_args: --label "version=$SENSU_VERSION" --label "release=$BUILD_NUMBER" --push --platform "<< parameters.platforms >>"
 
 workflows:
   docker:
