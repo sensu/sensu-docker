@@ -43,7 +43,7 @@ commands:
       branch:
         type: string
         default: "main"
-    steps:
+    steps: 
       - when:
           condition: << pipeline.parameters.target_workflow >>
           steps:
@@ -135,6 +135,11 @@ commands:
           name: Set TARGET_BRANCH_NO_SLASHES
           command: >
             echo "export TARGET_BRANCH_NO_SLASHES=${TARGET_BRANCH//\//_}" >>
+            $BASH_ENV
+      - run:
+          name: Set CIRCLE_BRANCH_NO_SLASHES
+          command: >
+            echo "export CIRCLE_BRANCH_NO_SLASHES=${CIRCLE_BRANCH//\//_}" >>
             $BASH_ENV
   extract-tarballs:
     description: Extracts all tarballs in a given directory
@@ -295,7 +300,7 @@ workflows:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
           path: dockerfiles/alpine
-          tag: "$TARGET_BRANCH_NO_SLASHES-alpine,$TARGET_REVISION-alpine"
+          tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-alpine,$TARGET_REVISION-alpine"
           pre-steps:
             - checkout
             - buildx/install
@@ -352,7 +357,7 @@ workflows:
           name: build-rhel7
           platforms: linux/amd64
           path: dockerfiles/redhat7
-          tag: "$TARGET_BRANCH_NO_SLASHES-rhel7,$TARGET_REVISION-rhel7"
+          tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-rhel7,$TARGET_REVISION-rhel7"
           pre-steps:
             - checkout
             - buildx/install
