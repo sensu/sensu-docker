@@ -74,7 +74,9 @@ build that you would like to package.
 TARGET_BRANCH="REPLACEME" ./scripts/trigger-build.sh
 ```
 
-## Build Parameters (Sensu, Inc. only)
+## Build Parameters (for internal use only)
+
+The following instructions are for internal use only, for generating builds with the Sensu Go commercial distribution.
 
 ### target_workflow
 
@@ -88,7 +90,9 @@ When value is set to an empty string the `circleci-fetch-artifacts.sh` script
 uses the workflow id of the latest successful build for the main branch in
 our internal commercial repository.
 
-## Publishing CircleCI Orbs (Sensu, Inc. only)
+## Publishing CircleCI Orbs (for internal use only)
+
+The following instructions are for internal use only, for generating builds with the Sensu Go commercial distribution.
 
 ### Development Versions
 
