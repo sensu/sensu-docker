@@ -36,7 +36,10 @@ docker buildx build --file dockerfiles/redhat7/Dockerfile --platform linux/amd64
 ```
 
 
-## Manually Triggered Builds (Sensu, Inc. only)
+## Manually Triggered Builds (for internal use only)
+
+The following instructions are for internal use only, for generating builds with the Sensu Go commercial distribution.
+
 Builds can be triggered using the `scripts/trigger-build.sh` script for a given
 CircleCI workflow ID or git branch.
 
