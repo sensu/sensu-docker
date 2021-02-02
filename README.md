@@ -130,6 +130,8 @@ or not to use a major, minor, or patch level version bump:
 circleci orb pack src | circleci orb publish promote sensu/orb@dev:version bump-type
 ```
 
+[1]: https://github.com/sensu/sensu-enterprise-go/branches
+[2]: https://app.circleci.com/pipelines/github/sensu/sensu-enterprise-go
 [justin-slack]: https://sensu.slack.com/team/U053FL3SK
 [sean-slack]: https://sensu.slack.com/team/U051E44V1
 [cameron-slack]: https://sensu.slack.com/team/U0562RSF2
