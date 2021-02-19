@@ -2,7 +2,44 @@
 
 This repository contains the code required to build Docker images.
 
-## Manually Triggered Builds
+## Building Images
+
+This repository requires the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/)
+feature to be installed & enabled.
+
+1. Clone this repository.
+
+2. Create target directories for each of the platforms you wish to build Docker images
+for. E.g.
+
+``` sh
+mkdir -p target/linux/amd64 target/linux/arm64 target/linux/arm/v6
+```
+
+3. Download the [Binary archives](https://sensu.io/downloads) for each of the platforms
+that directories were created for in the previous step and extract them to their
+respective target directories.
+
+4. Use `docker buildx build` with the path of the Dockerfile to use and with the `--platform`
+flag to build the images.
+
+### Alpine Example
+
+``` sh
+docker buildx build --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
+```
+
+### RHEL 7 Example
+
+``` sh
+docker buildx build --file dockerfiles/redhat7/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
+```
+
+
+## Manually Triggered Builds (for internal use only)
+
+The following instructions are for internal use only, for generating builds with the Sensu Go commercial distribution.
+
 Builds can be triggered using the `scripts/trigger-build.sh` script for a given
 CircleCI workflow ID or git branch.
 
@@ -40,7 +77,9 @@ build that you would like to package.
 TARGET_BRANCH="REPLACEME" ./scripts/trigger-build.sh
 ```
 
-## Build Parameters
+## Build Parameters (for internal use only)
+
+The following instructions are for internal use only, for generating builds with the Sensu Go commercial distribution.
 
 ### target_workflow
 
@@ -54,7 +93,9 @@ When value is set to an empty string the `circleci-fetch-artifacts.sh` script
 uses the workflow id of the latest successful build for the main branch in
 our internal commercial repository.
 
-## Publishing CircleCI Orbs
+## Publishing CircleCI Orbs (for internal use only)
+
+The following instructions are for internal use only, for generating builds with the Sensu Go commercial distribution.
 
 ### Development Versions
 
@@ -89,6 +130,8 @@ or not to use a major, minor, or patch level version bump:
 circleci orb pack src | circleci orb publish promote sensu/orb@dev:version bump-type
 ```
 
+[1]: https://github.com/sensu/sensu-enterprise-go/branches
+[2]: https://app.circleci.com/pipelines/github/sensu/sensu-enterprise-go
 [justin-slack]: https://sensu.slack.com/team/U053FL3SK
 [sean-slack]: https://sensu.slack.com/team/U051E44V1
 [cameron-slack]: https://sensu.slack.com/team/U0562RSF2
