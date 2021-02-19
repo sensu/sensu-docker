@@ -167,10 +167,15 @@ commands:
                 file << parameters.binary >>
                 cat << parameters.binary >>
               fi
-      - run:
-          name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
-          working_directory: << parameters.working_directory >>
-          command: ./<< parameters.binary >> version
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.working_directory >>", "target/linux/s390x"]
+          steps:
+            - run:
+                name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
+                working_directory: << parameters.working_directory >>
+                command: ./<< parameters.binary >> version
   unsupported-binary:
     parameters:
       working_directory:
