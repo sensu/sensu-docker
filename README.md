@@ -112,15 +112,7 @@ circleci orb pack src | circleci orb publish - sensu/orb@dev:version
 
 For now, CircleCI limits the publishing of CircleCI orbs to GitHub Organization
 administrators. If a new release of any of our CircleCI orbs is needed, please
-contact one of the GitHub Organization admins:
-* [Justin][justin-slack]
-* [Sean][sean-slack]
-* [Cameron][cameron-slack]
-* [Anthony][anthony-slack]
-* [Caleb][caleb-slack]
-
-**NOTE:** If an orb needs to be published and the GitHub Organization admins
-cannot be reached via Slack, contact [Justin][justin-slack] via SMS/Phone.
+contact one of the GitHub Organization admins.
 
 Orbs can be published by checking out the latest code from the orb repository
 and then running the following, specifying the orb name & dev version & whether
@@ -132,8 +124,3 @@ circleci orb pack src | circleci orb publish promote sensu/orb@dev:version bump-
 
 [1]: https://github.com/sensu/sensu-enterprise-go/branches
 [2]: https://app.circleci.com/pipelines/github/sensu/sensu-enterprise-go
-[justin-slack]: https://sensu.slack.com/team/U053FL3SK
-[sean-slack]: https://sensu.slack.com/team/U051E44V1
-[cameron-slack]: https://sensu.slack.com/team/U0562RSF2
-[anthony-slack]: https://sensu.slack.com/team/U054A5JD7
-[caleb-slack]: https://sensu.slack.com/team/U02L65BU5
