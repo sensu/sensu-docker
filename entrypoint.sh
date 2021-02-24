@@ -9,7 +9,7 @@ called_path=${SENSU}/bin/${called}
 : ${SENSU_HOSTNAME:=$HOSTNAME}
 
 if [ $called = "sensu-agent" ]; then
-    : ${SENSU_BACKEND_URL:=ws://${SENSU_HOSTNAME}:8080}
+    : ${SENSU_BACKEND_URL:=ws://${SENSU_HOSTNAME}:8081}
 
     export SENSU_BACKEND_URL
 elif [ $called = "sensu-backend" ]; then
