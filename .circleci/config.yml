@@ -276,7 +276,7 @@ jobs:
   build-docker:
     executor:
       name: docker/machine
-      image: "ubuntu-2004:202010-01"
+      image: "ubuntu-2004:202101-01"
       dlc: true
     parameters:
       platforms:
