@@ -308,7 +308,8 @@ workflows:
           tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-alpine,$TARGET_REVISION-alpine"
           pre-steps:
             - checkout
-            - buildx/install
+            - buildx/install:
+                version: 0.5.1
             - create-target-directory
             - setenv-target-workflow
             - setup-metadata:
