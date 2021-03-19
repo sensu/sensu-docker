@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   docker: circleci/docker@1.4.0
-  buildx: sensu/docker-buildx@1.0.0
+  buildx: sensu/docker-buildx@1.1.1
 
 parameters:
   target_workflow:
@@ -10,6 +10,11 @@ parameters:
     default: ""
 
 commands:
+  docker-login:
+    steps:
+      - run:
+          name: Login to Docker
+          command: echo $DOCKER_PASSWORD | docker login --username $DOCKER_LOGIN --password-stdin
   create-target-directory:
     steps:
       - run:
@@ -289,9 +294,6 @@ jobs:
       tag:
         type: string
     steps:
-      - run:
-          name: Login to Docker
-          command: echo $DOCKER_PASSWORD | docker login --username $DOCKER_LOGIN --password-stdin
       - docker/build:
           image: << parameters.image >>
           tag: << parameters.tag >>
@@ -303,13 +305,13 @@ workflows:
     jobs:
       - build-docker:
           name: build-alpine
-          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/ppc64le,linux/s390x
+          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
           path: dockerfiles/alpine
           tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-alpine,$TARGET_REVISION-alpine"
           pre-steps:
             - checkout
-            - buildx/install:
-                version: 0.5.1
+            - docker-login
+            - buildx/install
             - create-target-directory
             - setenv-target-workflow
             - setup-metadata:
@@ -325,11 +327,6 @@ workflows:
                 target: linux_amd64
                 supports_backend: true
             - fetch-and-verify-binaries:
-                job: build-linux_arm64
-                destination: target/linux/arm64
-                target: linux_arm64
-                supports_backend: true
-            - fetch-and-verify-binaries:
                 job: build-linux_arm_6
                 destination: target/linux/arm/v6
                 target: linux_arm_6
@@ -337,6 +334,11 @@ workflows:
                 job: build-linux_arm_7
                 destination: target/linux/arm/v7
                 target: linux_arm_7
+            - fetch-and-verify-binaries:
+                job: build-linux_arm64
+                destination: target/linux/arm64
+                target: linux_arm64
+                supports_backend: true
             - fetch-and-verify-binaries:
                 job: build-linux_ppc64le
                 destination: target/linux/ppc64le
@@ -366,6 +368,7 @@ workflows:
           tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-rhel7,$TARGET_REVISION-rhel7"
           pre-steps:
             - checkout
+            - docker-login
             - buildx/install
             - create-target-directory
             - setenv-target-workflow
