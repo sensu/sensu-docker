@@ -360,7 +360,7 @@ commands:
                 command: >
                   if ! file << parameters.binary >> | grep executable; then
                   file << parameters.binary >>;
-                  cat << parameters.binary >>
+                  cat << parameters.binary >>;
                   fi
             - when:
                 condition:
