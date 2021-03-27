@@ -560,17 +560,13 @@ jobs:
           name: Docker build
           command: |
             $tags = "<< parameters.tag >>"
-            $docker_tag_args = ""
+            $env:docker_tag_args = ""
             ForEach ($tag in $tags.Split(",")) {
-            $docker_tag_args += " -t << parameters.image >>:$($tag)"
+            $env:docker_tag_args += " -t << parameters.image >>:$($tag)"
             }
-            dir
-            Write-Output "path: << parameters.path >>"
-            Write-Output "dockerfile: << parameters.dockerfile >>"
-            dir << parameters.path >>
             Set-PSDebug -Trace 1
-            $dockerfile_path = "<< parameters.path >>/<< parameters.dockerfile >>"
-            docker build -f $dockerfile_path $docker_tag_args .
+            $env:dockerfile_path = "<< parameters.path >>/<< parameters.dockerfile >>"
+            docker build -f $env:dockerfile_path $env:docker_tag_args .
 
 workflows:
   docker:
