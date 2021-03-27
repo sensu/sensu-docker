@@ -568,7 +568,8 @@ jobs:
             Write-Output "path: << parameters.path >>"
             Write-Output "dockerfile: << parameters.dockerfile >>"
             dir << parameters.path >>
-            docker build -f << parameters.path >>\\<< parameters.dockerfile >> $docker_tag_args .
+            $dockerfile_path = "<< parameters.path >>/<< parameters.dockerfile >>"
+            & docker build -f $dockerfile_path $docker_tag_args .
 
 workflows:
   docker:
