@@ -544,6 +544,9 @@ jobs:
     parameters:
       path:
         type: string
+      dockerfile:
+        type: string
+        default: "Dockerfile"
       image:
         type: string
         default: "sensu/sensu-ci"
@@ -561,13 +564,17 @@ jobs:
             ForEach ($tag in $tags.Split(",")) {
             $docker_tag_args += " -t << parameters.image >>:$($tag)"
             }
-            docker build -f << parameters.path >> $($docker_tag_args) .
+            dir
+            Write-Output "<< parameters.path >>"
+            Write-Output "<< parameters.dockerfile >>"
+            dir << parameters.path >>
+            docker build -f << parameters.path >>\\<< parameters.dockerfile >> $docker_tag_args .
 
 workflows:
   docker:
     jobs:
       - build-docker-windows:
-          path: dockerfiles/windows-nanoserver-20H2
+          path: dockerfiles\\windows-nanoserver-20H2
           tag: "$env:TARGET_BRANCH_NO_SLASHES-$env:CIRCLE_BRANCH_NO_SLASHES-windows-nanoserver-20H2,$env:TARGET_REVISION-windows-nanoserver-20H2"
           pre-steps:
             - checkout
