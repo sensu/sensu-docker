@@ -223,7 +223,7 @@ commands:
             - run:
                 name: Fetch artifacts for << parameters.job >>
                 command: >
-                  .\scripts\circleci-fetch-artifacts.ps1 $env:<< parameters.workflow >>
+                  ./scripts/circleci-fetch-artifacts.ps1 $env:<< parameters.workflow >>
                   << parameters.job >> << parameters.destination >>
                   << parameters.filter >>
   setup-metadata:
@@ -378,7 +378,7 @@ commands:
             - run:
                 name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
                 working_directory: << parameters.working_directory >>
-                command: .\<< parameters.binary >>.exe version
+                command: ./<< parameters.binary >>.exe version
   unsupported-binary:
     parameters:
       working_directory:
