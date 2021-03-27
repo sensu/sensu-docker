@@ -571,8 +571,8 @@ workflows:
   docker:
     jobs:
       - build-docker-windows:
-          path: dockerfiles/windows-nanoserver-20H2
-          tag: "$env:TARGET_BRANCH_NO_SLASHES-$env:CIRCLE_BRANCH_NO_SLASHES-windows-nanoserver-20H2,$env:TARGET_REVISION-windows-nanoserver-20H2"
+          path: dockerfiles/windows-nanoserver-1809
+          tag: "$env:TARGET_BRANCH_NO_SLASHES-$env:CIRCLE_BRANCH_NO_SLASHES-windows-nanoserver-1809,$env:TARGET_REVISION-windows-nanoserver-1809"
           pre-steps:
             - checkout
             - docker-login:

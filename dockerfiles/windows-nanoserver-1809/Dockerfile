@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/windows/nanoserver:20H2
+FROM mcr.microsoft.com/windows/nanoserver:1809
 
 MAINTAINER Sensu, Inc. Engineering <engineering@sensu.io>
 
