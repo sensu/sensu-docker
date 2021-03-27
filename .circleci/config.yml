@@ -57,7 +57,7 @@ commands:
   setenv-from-file:
     parameters:
       variable-name:
-        type: string
+        type: env_var_name
       path:
         type: string
       platform:
@@ -101,8 +101,7 @@ commands:
                 shell: powershell.exe
                 command: |
                   If ([string]::IsNullOrEmpty($env:<< parameters.variable-name >>)) {
-                  Write-Output "<< parameters.variable-name >> is empty"
-                  exit 1
+                  throw "<< parameters.variable-name >> is empty"
                   }
             - run:
                 name: Print << parameters.variable-name >>
@@ -183,12 +182,11 @@ commands:
                       name: Ensure TARGET_WORKFLOW is set
                       command: |
                         If ([string]::IsNullorEmpty($env:TARGET_WORKFLOW)) {
-                        Write-Error "TARGET_WORKFLOW is empty"
-                        exit 1
+                        throw "TARGET_WORKFLOW is empty"
                         }
                   - run:
                       name: Print TARGET_WORKFLOW
-                      command: Write-Output $env:$TARGET_WORKFLOW
+                      command: Write-Output $env:TARGET_WORKFLOW
   fetch-job-artifacts:
     description: Fetches a job's artifacts for a given workflow & job name
     parameters:
