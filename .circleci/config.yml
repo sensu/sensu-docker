@@ -561,8 +561,6 @@ jobs:
             ForEach ($tag in $tags.Split(",")) {
             $docker_tag_args += " -t << parameters.image >>:$($tag)"
             }
-            Write-Output $docker_tag_args
-            docker build --help
             docker build -f << parameters.path >> $($docker_tag_args) .
 
 workflows:
