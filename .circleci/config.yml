@@ -506,25 +506,25 @@ commands:
       image:
         type: string
         default: "sensu/sensu-ci"
+      platform:
+        type: string
+        default: "linux"
       tag:
         type: string
       command:
         type: string
-      platform:
-        type: string
-        default: "linux"
     steps:
       - when:
           condition:
             not:
-              equal: ["<< paramaters.platform >>", "windows"]
+              equal: ["<< parameters.platform >>", "windows"]
           steps:
             - run: >
                 docker run --rm << parameters.image >>:<< parameters.tag >>
                 sh -c "<< parameters.command >>"
       - when:
           condition:
-            equal: ["<< paramaters.platform >>", "windows"]
+            equal: ["<< parameters.platform >>", "windows"]
           steps:
             - run: >
                 docker run --rm << parameters.image >>:<< parameters.tag >>
