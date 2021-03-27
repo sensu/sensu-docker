@@ -57,7 +57,7 @@ commands:
   setenv-from-file:
     parameters:
       variable-name:
-        type: env_var_name
+        type: string
       path:
         type: string
       platform:
@@ -361,7 +361,7 @@ commands:
                 working_directory: << parameters.working_directory >>
                 command: >
                   if ! file << parameters.binary >> | grep executable; then
-                  file << parameters.binary >>
+                  file << parameters.binary >>;
                   cat << parameters.binary >>
                   fi
             - when:
