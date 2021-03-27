@@ -191,8 +191,8 @@ commands:
     description: Fetches a job's artifacts for a given workflow & job name
     parameters:
       workflow:
-        type: string
-        default: "$TARGET_WORKFLOW"
+        type: env_var_name
+        default: "TARGET_WORKFLOW"
       job:
         type: string
       destination:
@@ -213,7 +213,7 @@ commands:
             - run:
                 name: Fetch artifacts for << parameters.job >>
                 command: >
-                  ./scripts/circleci-fetch-artifacts.sh << parameters.workflow >>
+                  ./scripts/circleci-fetch-artifacts.sh $<< parameters.workflow >>
                   << parameters.job >> << parameters.destination >>
                   << parameters.filter >>
       - when:
@@ -223,7 +223,7 @@ commands:
             - run:
                 name: Fetch artifacts for << parameters.job >>
                 command: >
-                  .\scripts\circleci-fetch-artifacts.ps1 << parameters.workflow >>
+                  .\scripts\circleci-fetch-artifacts.ps1 $env:<< parameters.workflow >>
                   << parameters.job >> << parameters.destination >>
                   << parameters.filter >>
   setup-metadata:
