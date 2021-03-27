@@ -510,10 +510,25 @@ commands:
         type: string
       command:
         type: string
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run: >
-          docker run --rm << parameters.image >>:<< parameters.tag >>
-          sh -c "<< parameters.command >>"
+      - when:
+          condition:
+            not:
+              equal: ["<< paramaters.platform >>", "windows"]
+          steps:
+            - run: >
+                docker run --rm << parameters.image >>:<< parameters.tag >>
+                sh -c "<< parameters.command >>"
+      - when:
+          condition:
+            equal: ["<< paramaters.platform >>", "windows"]
+          steps:
+            - run: >
+                docker run --rm << parameters.image >>:<< parameters.tag >>
+                cmd.exe /c << parameters.command >>
 
 jobs:
   build-docker:
@@ -602,15 +617,18 @@ workflows:
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
-                command: dir
+                command: dir.exe
+                platform: windows
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
                 command: sensu-agent.exe version
+                platform: windows
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
                 command: sensuctl.exe version
+                platform: windows
       - build-docker:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
