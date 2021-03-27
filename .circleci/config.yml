@@ -565,8 +565,8 @@ jobs:
             $docker_tag_args += " -t << parameters.image >>:$($tag)"
             }
             dir
-            Write-Output "<< parameters.path >>"
-            Write-Output "<< parameters.dockerfile >>"
+            Write-Output "path: << parameters.path >>"
+            Write-Output "dockerfile: << parameters.dockerfile >>"
             dir << parameters.path >>
             docker build -f << parameters.path >>\\<< parameters.dockerfile >> $docker_tag_args .
 
