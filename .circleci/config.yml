@@ -617,11 +617,6 @@ workflows:
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
-                command: dir.exe
-                platform: windows
-            - docker-run-command:
-                image: sensu/sensu-ci
-                tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
                 command: sensu-agent.exe version
                 platform: windows
             - docker-run-command:
