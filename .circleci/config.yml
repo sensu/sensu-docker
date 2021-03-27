@@ -337,7 +337,7 @@ commands:
                   $archives = (Get-ChildItem -File *.zip -Recurse)
                   ForEach($archive in $archives) {
                   Write-Output "extracting: $($archive)"
-                  Expand-Archive $archive
+                  Expand-Archive -DestinationPath . $archive
                   }
   verify-binary:
     parameters:
