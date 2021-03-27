@@ -568,14 +568,15 @@ jobs:
             Write-Output "path: << parameters.path >>"
             Write-Output "dockerfile: << parameters.dockerfile >>"
             dir << parameters.path >>
+            Set-PSDebug -Trace 1
             $dockerfile_path = "<< parameters.path >>/<< parameters.dockerfile >>"
-            & docker build -f $dockerfile_path $docker_tag_args .
+            docker build -f $dockerfile_path $docker_tag_args .
 
 workflows:
   docker:
     jobs:
       - build-docker-windows:
-          path: dockerfiles\\windows-nanoserver-20H2
+          path: dockerfiles/windows-nanoserver-20H2
           tag: "$env:TARGET_BRANCH_NO_SLASHES-$env:CIRCLE_BRANCH_NO_SLASHES-windows-nanoserver-20H2,$env:TARGET_REVISION-windows-nanoserver-20H2"
           pre-steps:
             - checkout
