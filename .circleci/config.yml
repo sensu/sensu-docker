@@ -548,20 +548,31 @@ jobs:
     parameters:
       path:
         type: string
+      image:
+        type: string
+        default: "sensu/sensu-ci"
       tag:
         type: string
     steps:
       - checkout
       - docker-login:
           platform: windows
-      - run: docker build -f << parameters.path >> -t << parameters.tag >> --push .
+      - run:
+          name: Docker build
+          command: |
+            $tags = "<< parameters.tag >>"
+            $docker_tag_args = ""
+            ForEach ($tag in $tags.Split(",")) {
+            $docker_tag_args += "-t << parameters.image >>:$($tag)"
+            }
+            docker build -f << parameters.path >> $docker_tag_args .
 
 workflows:
   docker:
     jobs:
       - build-docker-windows:
           path: dockerfiles/windows-nanoserver-20H2
-          tag: "sensu/sensu-ci:windows-nanoserver-20H2-latest"
+          tag: "$env:TARGET_BRANCH_NO_SLASHES-$env:CIRCLE_BRANCH_NO_SLASHES-windows-nanoserver-20H2,$env:TARGET_REVISION-windows-nanoserver-20H2"
           pre-steps:
             - checkout
             - docker-login:
@@ -583,11 +594,11 @@ workflows:
           post-steps:
             - docker-run-command:
                 image: sensu/sensu-ci
-                tag: "$TARGET_REVISION-windows-nanoserver-20H2"
+                tag: "$env:TARGET_REVISION-windows-nanoserver-20H2"
                 command: sensu-agent version
             - docker-run-command:
                 image: sensu/sensu-ci
-                tag: "$TARGET_REVISION-windows-nanoserver-20H2"
+                tag: "$env:TARGET_REVISION-windows-nanoserver-20H2"
                 command: sensuctl version
       - build-docker:
           name: build-alpine
