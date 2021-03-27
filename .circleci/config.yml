@@ -376,10 +376,6 @@ commands:
             equal: ["<< parameters.platform >>", "windows"]
           steps:
             - run:
-                name: testing
-                working_directory: << parameters.working_directory >>
-                command: dir
-            - run:
                 name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
                 working_directory: << parameters.working_directory >>
                 command: .\\<< parameters.binary >>.exe version
@@ -565,7 +561,9 @@ jobs:
             ForEach ($tag in $tags.Split(",")) {
             $docker_tag_args += " -t << parameters.image >>:$($tag)"
             }
-            docker build -f << parameters.path >> $docker_tag_args .
+            Write-Output $docker_tag_args
+            docker build --help
+            docker build -f << parameters.path >> $($docker_tag_args) .
 
 workflows:
   docker:
