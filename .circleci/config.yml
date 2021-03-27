@@ -554,9 +554,6 @@ jobs:
         type: string
     steps:
       - checkout
-      - run:
-          name: Disable progress bars to speed up Invoke-WebReqeust
-          command: $ProgressPreference = 'SilentlyContinue'
       - docker-login:
           platform: windows
       - run:
@@ -605,11 +602,15 @@ workflows:
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
-                command: .\\sensu-agent.exe version
+                command: dir
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
-                command: .\\sensuctl.exe version
+                command: sensu-agent.exe version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$env:TARGET_REVISION-windows-nanoserver-1809"
+                command: sensuctl.exe version
       - build-docker:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x

@@ -29,6 +29,7 @@ function CircleCI-Request {
     };
 
     try {
+        $ProgressPreference = 'SilentlyContinue'
         return Invoke-WebRequest -Uri $uri -Headers $headers -OutFile $OutputPath
     }
     catch {
