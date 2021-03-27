@@ -298,13 +298,13 @@ commands:
                 name: Set TARGET_BRANCH_NO_SLASHES
                 command: >
                   [System.Environment]::SetEnvironmentVariable("TARGET_BRANCH_NO_SLASHES",
-                  ($TARGET_BRANCH).Replace("/", "_"),
+                  ($env:TARGET_BRANCH).Replace("/", "_"),
                   [System.EnvironmentVariableTarget]::User)
             - run:
                 name: Set CIRCLE_BRANCH_NO_SLASHES
                 command: >
-                  [System.Environment]::SetEnvironmentVariable(CIRCLE_BRANCH_NO_SLASHES",
-                  ($CIRCLE_BRANCH).Replace("/", "_"),
+                  [System.Environment]::SetEnvironmentVariable("CIRCLE_BRANCH_NO_SLASHES",
+                  ($env:CIRCLE_BRANCH).Replace("/", "_"),
                   [System.EnvironmentVariableTarget]::User)
   extract-archives:
     description: Extracts all archives in a given directory
