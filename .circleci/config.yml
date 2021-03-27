@@ -563,7 +563,7 @@ jobs:
             $tags = "<< parameters.tag >>"
             $docker_tag_args = ""
             ForEach ($tag in $tags.Split(",")) {
-            $docker_tag_args += "-t << parameters.image >>:$($tag)"
+            $docker_tag_args += " -t << parameters.image >>:$($tag)"
             }
             docker build -f << parameters.path >> $docker_tag_args .
 
