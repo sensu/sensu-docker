@@ -334,7 +334,7 @@ commands:
                 name: Extract tarballs in << parameters.working_directory >>
                 working_directory: << parameters.working_directory >>
                 command: |
-                  $archives = (Get-ChildItem -File *.tar.gz -Recurse)
+                  $archives = (Get-ChildItem -File *.zip -Recurse)
                   ForEach($archive in $archives) {
                   Write-Output "extracting: $($archive)"
                   Expand-Archive $archive
