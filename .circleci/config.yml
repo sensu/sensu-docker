@@ -176,7 +176,9 @@ commands:
                       environment:
                         TARGET_BRANCH: << parameters.branch >>
                       command: |
-                        ./scripts/find-branch-workflow.ps1 > workflow
+                        [System.Environment]::SetEnvironmentVariable("TARGET_WORKFLOW",
+                        "$(./scripts/find-branch-workflow.ps1)",
+                        [System.EnvironmentVariableTarget]::User)
                   - run:
                       name: Ensure TARGET_WORKFLOW is set
                       command: |
