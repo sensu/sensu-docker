@@ -376,9 +376,13 @@ commands:
             equal: ["<< parameters.platform >>", "windows"]
           steps:
             - run:
+                name: testing
+                working_directory: << parameters.working_directory >>
+                command: dir
+            - run:
                 name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
                 working_directory: << parameters.working_directory >>
-                command: ./<< parameters.binary >>.exe version
+                command: .\\<< parameters.binary >>.exe version
   unsupported-binary:
     parameters:
       working_directory:
