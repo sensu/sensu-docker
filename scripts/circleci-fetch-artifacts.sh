@@ -37,6 +37,11 @@ if [ "x${destination}" = "x" ]; then
     exit 1
 fi
 
+if [ "x${CIRCLE_TOKEN}" = "x" ]; then
+    echo "CIRCLE_TOKEN environment variable must be set"
+    exit 1
+fi
+
 section "called arguments"
 echo "Target Workflow: ${target_workflow}"
 echo "Target Job: ${target_job}"

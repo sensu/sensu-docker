@@ -3,6 +3,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@1.4.0
   buildx: sensu/docker-buildx@1.1.1
+  windows: circleci/windows@2.4.0
 
 parameters:
   target_workflow:
@@ -11,74 +12,181 @@ parameters:
 
 commands:
   docker-login:
+    parameters:
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run:
-          name: Login to Docker
-          command: echo $DOCKER_PASSWORD | docker login --username $DOCKER_LOGIN --password-stdin
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Login to Docker
+                command: echo $DOCKER_PASSWORD | docker login --username $DOCKER_LOGIN --password-stdin
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Login to Docker
+                command: Write-Output $env:DOCKER_PASSWORD | docker login --username $env:DOCKER_LOGIN --password-stdin
   create-target-directory:
+    parameters:
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run:
-          name: Create target directory
-          command: mkdir -pv target
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Create target directory
+                command: mkdir -pv target
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Create target directory
+                shell: powershell.exe
+                command: New-Item -Path target -Type directory -Force
   setenv-from-file:
     parameters:
       variable-name:
         type: env_var_name
       path:
         type: string
+      platform:
+        type: string
+        default: linux
     steps:
-      - run:
-          name: Set << parameters.variable-name >> environment variable
-          command: >
-            echo "export
-            << parameters.variable-name >>=$(cat << parameters.path >> | tr -d
-            '\n')" >> $BASH_ENV
-      - run:
-          name: Ensure << parameters.variable-name >> is set
-          command: |
-            if [ "x${<< parameters.variable-name >>}" = "x" ]; then
-            echo "<< parameters.variable-name >> is empty"
-            exit 1
-            fi
-      - run:
-          name: Print << parameters.variable-name >>
-          command: echo $<< parameters.variable-name >>
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Set << parameters.variable-name >> environment variable
+                command: >
+                  echo "export
+                  << parameters.variable-name >>=$(cat << parameters.path >> |
+                  tr -d '\n')" >> $BASH_ENV
+            - run:
+                name: Ensure << parameters.variable-name >> is set
+                command: |
+                  if [ "x${<< parameters.variable-name >>}" = "x" ]; then
+                  echo "<< parameters.variable-name >> is empty"
+                  exit 1
+                  fi
+            - run:
+                name: Print << parameters.variable-name >>
+                command: echo $<< parameters.variable-name >>
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Set << parameters.variable-name >> environment variable
+                shell: powershell.exe
+                command: |
+                  $value = (Get-Content << parameters.path >>).Replace("`n", "").Replace("`r", "")
+                  [System.Environment]::SetEnvironmentVariable("<< parameters.variable-name >>",
+                  $value, [System.EnvironmentVariableTarget]::User)
+            - run:
+                name: Ensure << parameters.variable-name >> is set
+                shell: powershell.exe
+                command: |
+                  If ([string]::IsNullOrEmpty($env:<< parameters.variable-name >>)) {
+                  Write-Output "<< parameters.variable-name >> is empty"
+                  exit 1
+                  }
+            - run:
+                name: Print << parameters.variable-name >>
+                shell: powershell.exe
+                command: Write-Output $env:<< parameters.variable-name >>
   setenv-target-workflow:
     parameters:
       branch:
         type: string
         default: "main"
+      platform:
+        type: string
+        default: "linux"
     steps:
       - when:
           condition: << pipeline.parameters.target_workflow >>
           steps:
-            - run:
-                name: Set TARGET_WORKFLOW environment variable
-                command: >
-                  echo 'export
-                  TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>'
-                  >> $BASH_ENV
+            - when:
+                condition:
+                  not:
+                    equal: ["<< parameters.platform >>", "windows"]
+                steps:
+                  - run:
+                      name: Set TARGET_WORKFLOW environment variable
+                      command: >
+                        echo 'export
+                        TARGET_WORKFLOW=<< pipeline.parameters.target_workflow >>'
+                        >> $BASH_ENV
+            - when:
+                condition:
+                  equal: ["<< parameters.platform >>", "windows"]
+                steps:
+                  - run:
+                      name: Set TARGET_WORKFLOW environment variable
+                      command: >
+                        [System.Environment]::SetEnvironmentVariable("TARGET_WORKFLOW",
+                        "<< pipeline.parameters.target_workflow >>",
+                        [System.EnvironmentVariableTarget]::User)
       - when:
           condition:
             not: << pipeline.parameters.target_workflow >>
           steps:
-            - run:
-                name: Find target workflow for << parameters.branch >> branch
-                environment:
-                  TARGET_BRANCH: << parameters.branch >>
-                command: |
-                  ./scripts/find-branch-workflow.sh > workflow
-                  echo 'export TARGET_WORKFLOW="'$(cat workflow)'"' >> $BASH_ENV
-      - run:
-          name: Ensure TARGET_WORKFLOW is set
-          command: |
-            if [ "x$TARGET_WORKFLOW" = "x" ]; then
-            echo "TARGET_WORKFLOW is empty"
-            exit 1
-            fi
-      - run:
-          name: Print TARGET_WORKFLOW
-          command: echo $TARGET_WORKFLOW
+            - when:
+                condition:
+                  not:
+                    equal: ["<< parameters.platform >>", "windows"]
+                steps:
+                  - run:
+                      name: Find target workflow for << parameters.branch >> branch
+                      environment:
+                        TARGET_BRANCH: << parameters.branch >>
+                      command: |
+                        ./scripts/find-branch-workflow.sh > workflow
+                        echo 'export TARGET_WORKFLOW="'$(cat workflow)'"' >> $BASH_ENV
+                  - run:
+                      name: Ensure TARGET_WORKFLOW is set
+                      command: |
+                        if [ "x$TARGET_WORKFLOW" = "x" ]; then
+                        echo "TARGET_WORKFLOW is empty"
+                        exit 1
+                        fi
+                  - run:
+                      name: Print TARGET_WORKFLOW
+                      command: echo $TARGET_WORKFLOW
+            - when:
+                condition:
+                  equal: ["<< parameters.platform >>", "windows"]
+                steps:
+                  - run:
+                      name: Find target workflow for << parameters.branch >> branch
+                      environment:
+                        TARGET_BRANCH: << parameters.branch >>
+                      command: |
+                        ./scripts/find-branch-workflow.ps1 > workflow
+                  - run:
+                      name: Ensure TARGET_WORKFLOW is set
+                      command: |
+                        If ([string]::IsNullorEmpty($env:TARGET_WORKFLOW)) {
+                        Write-Error "TARGET_WORKFLOW is empty"
+                        exit 1
+                        }
+                  - run:
+                      name: Print TARGET_WORKFLOW
+                      command: Write-Output $env:$TARGET_WORKFLOW
   fetch-job-artifacts:
     description: Fetches a job's artifacts for a given workflow & job name
     parameters:
@@ -93,111 +201,209 @@ commands:
       filter:
         type: string
         default: ""
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run:
-          name: Fetch artifacts for << parameters.job >>
-          command: >
-            ./scripts/circleci-fetch-artifacts.sh << parameters.workflow >>
-            << parameters.job >> << parameters.destination >>
-            << parameters.filter >>
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Fetch artifacts for << parameters.job >>
+                command: >
+                  ./scripts/circleci-fetch-artifacts.sh << parameters.workflow >>
+                  << parameters.job >> << parameters.destination >>
+                  << parameters.filter >>
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Fetch artifacts for << parameters.job >>
+                command: >
+                  .\scripts\circleci-fetch-artifacts.ps1 << parameters.workflow >>
+                  << parameters.job >> << parameters.destination >>
+                  << parameters.filter >>
   setup-metadata:
     description: Fetches metadata files and sets environment variables
     parameters:
       target:
         type: string
+      platform:
+        type: string
+        default: "linux"
     steps:
       - fetch-job-artifacts:
           filter: "commit-date"
           job: build-<< parameters.target >>
+          platform: << parameters.platform >>
       - fetch-job-artifacts:
           filter: "version"
           job: build-<< parameters.target >>
+          platform: << parameters.platform >>
       - fetch-job-artifacts:
           filter: "build-number"
           job: build-<< parameters.target >>
+          platform: << parameters.platform >>
       - fetch-job-artifacts:
           filter: "git-revision"
           job: build-<< parameters.target >>
+          platform: << parameters.platform >>
       - fetch-job-artifacts:
           filter: "git-branch"
           job: build-<< parameters.target >>
+          platform: << parameters.platform >>
       - setenv-from-file:
           variable-name: COMMIT_DATE
           path: target/commit-date
+          platform: << parameters.platform >>
       - setenv-from-file:
           variable-name: SENSU_VERSION
           path: target/version
+          platform: << parameters.platform >>
       - setenv-from-file:
           variable-name: BUILD_NUMBER
           path: target/build-number
+          platform: << parameters.platform >>
       - setenv-from-file:
           variable-name: TARGET_REVISION
           path: target/git-revision
+          platform: << parameters.platform >>
       - setenv-from-file:
           variable-name: TARGET_BRANCH
           path: target/git-branch
-      - run:
-          name: Set TARGET_BRANCH_NO_SLASHES
-          command: >
-            echo "export TARGET_BRANCH_NO_SLASHES=${TARGET_BRANCH//\//_}" >>
-            $BASH_ENV
-      - run:
-          name: Set CIRCLE_BRANCH_NO_SLASHES
-          command: >
-            echo "export CIRCLE_BRANCH_NO_SLASHES=${CIRCLE_BRANCH//\//_}" >>
-            $BASH_ENV
-  extract-tarballs:
-    description: Extracts all tarballs in a given directory
+          platform: << parameters.platform >>
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Set TARGET_BRANCH_NO_SLASHES
+                command: >
+                  echo "export TARGET_BRANCH_NO_SLASHES=${TARGET_BRANCH//\//_}" >>
+                  $BASH_ENV
+            - run:
+                name: Set CIRCLE_BRANCH_NO_SLASHES
+                command: >
+                  echo "export CIRCLE_BRANCH_NO_SLASHES=${CIRCLE_BRANCH//\//_}" >>
+                  $BASH_ENV
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Set TARGET_BRANCH_NO_SLASHES
+                command: >
+                  [System.Environment]::SetEnvironmentVariable("TARGET_BRANCH_NO_SLASHES",
+                  ($TARGET_BRANCH).Replace("/", "_"),
+                  [System.EnvironmentVariableTarget]::User)
+            - run:
+                name: Set CIRCLE_BRANCH_NO_SLASHES
+                command: >
+                  [System.Environment]::SetEnvironmentVariable(CIRCLE_BRANCH_NO_SLASHES",
+                  ($CIRCLE_BRANCH).Replace("/", "_"),
+                  [System.EnvironmentVariableTarget]::User)
+  extract-archives:
+    description: Extracts all archives in a given directory
     parameters:
       working_directory:
         type: string
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run:
-          name: Extract tarballs in << parameters.working_directory >>
-          working_directory: << parameters.working_directory >>
-          command: |
-            find -type f -name '*.tar.gz' -exec echo "extracting: {}" \; -exec tar -zxf {} \;
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Extract tarballs in << parameters.working_directory >>
+                working_directory: << parameters.working_directory >>
+                command: >
+                  find -type f -name '*.tar.gz' -exec echo "extracting: {}" \;
+                  -exec tar -zxf {} \;
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Extract tarballs in << parameters.working_directory >>
+                working_directory: << parameters.working_directory >>
+                command: |
+                  $archives = (Get-ChildItem -File *.tar.gz -Recurse)
+                  ForEach($archive in $archives) {
+                  Write-Output "extracting: $($archive)"
+                  Expand-Archive $archive
+                  }
   verify-binary:
     parameters:
       working_directory:
         type: string
       binary:
         type: string
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run:
-          name: Verify file type of << parameters.working_directory >>/<< parameters.binary >>
-          working_directory: << parameters.working_directory >>
-          command: >
-              if ! file << parameters.binary >> | grep executable; then
-                file << parameters.binary >>
-                cat << parameters.binary >>
-              fi
       - when:
           condition:
             not:
-              equal: ["<< parameters.working_directory >>", "target/linux/s390x"]
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Verify file type of << parameters.working_directory >>/<< parameters.binary >>
+                working_directory: << parameters.working_directory >>
+                command: >
+                  if ! file << parameters.binary >> | grep executable; then
+                  file << parameters.binary >>
+                  cat << parameters.binary >>
+                  fi
+            - when:
+                condition:
+                  not:
+                    equal: ["<< parameters.working_directory >>", "target/linux/s390x"]
+                steps:
+                  - run:
+                      name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
+                      working_directory: << parameters.working_directory >>
+                      command: ./<< parameters.binary >> version
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
           steps:
             - run:
                 name: Verify version of << parameters.working_directory >>/<< parameters.binary >>
                 working_directory: << parameters.working_directory >>
-                command: ./<< parameters.binary >> version
+                command: .\<< parameters.binary >>.exe version
   unsupported-binary:
     parameters:
       working_directory:
         type: string
       binary:
         type: string
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - run:
-          name: Create unsupported binary << parameters.working_directory >>/<< parameters.binary >>
-          working_directory: << parameters.working_directory >>
-          command: >
-            printf "#!/bin/sh\necho \"<< parameters.binary >> is not
-            available for this platform\nexit 1\"\"" > << parameters.binary >>
-      - run:
-          name: Add execute bit to << parameters.working_directory >>/<< parameters.binary >>
-          working_directory: << parameters.working_directory >>
-          command: chmod a+x << parameters.binary >>
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - run:
+                name: Create unsupported binary << parameters.working_directory >>/<< parameters.binary >>
+                working_directory: << parameters.working_directory >>
+                command: >
+                  printf "#!/bin/sh\necho \"<< parameters.binary >> is not
+                  available for this platform\nexit 1\"\"" > << parameters.binary >>
+            - run:
+                name: Add execute bit to << parameters.working_directory >>/<< parameters.binary >>
+                working_directory: << parameters.working_directory >>
+                command: chmod a+x << parameters.binary >>
   verify-or-unsupported:
     parameters:
       working_directory:
@@ -206,6 +412,9 @@ commands:
         type: string
       supported:
         type: boolean
+      platform:
+        type: string
+        default: "linux"
     steps:
       - when:
           condition: << parameters.supported >>
@@ -213,13 +422,19 @@ commands:
             - verify-binary:
                 working_directory: << parameters.working_directory >>
                 binary: << parameters.binary >>
+                platform: << parameters.platform >>
       - unless:
           condition: << parameters.supported >>
           steps:
             - unsupported-binary:
                 working_directory: << parameters.working_directory >>
                 binary: << parameters.binary >>
+                platform: << parameters.platform >>
   fetch-licenses:
+    parameters:
+      platform:
+        type: string
+        default: "linux"
     steps:
       - fetch-job-artifacts:
           job: store-licenses
@@ -241,28 +456,51 @@ commands:
       supports_cli:
         type: boolean
         default: true
+      platform:
+        type: string
+        default: "linux"
     steps:
-      - fetch-job-artifacts:
-          filter: ".tar.gz"
-          job: << parameters.job >>
-          destination: << parameters.destination >>
-      - extract-tarballs:
+      - when:
+          condition:
+            not:
+              equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - fetch-job-artifacts:
+                filter: ".tar.gz"
+                job: << parameters.job >>
+                destination: << parameters.destination >>
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["<< parameters.platform >>", "windows"]
+          steps:
+            - fetch-job-artifacts:
+                filter: ".zip"
+                job: << parameters.job >>
+                destination: << parameters.destination >>
+                platform: << parameters.platform >>
+      - extract-archives:
           working_directory: << parameters.destination >>
+          platform: << parameters.platform >>
       - verify-or-unsupported:
           working_directory: << parameters.destination >>
           binary: sensu-agent
           supported: << parameters.supports_agent >>
+          platform: << parameters.platform >>
       - verify-or-unsupported:
           working_directory: << parameters.destination >>
           binary: sensu-backend
           supported: << parameters.supports_backend >>
+          platform: << parameters.platform >>
       - verify-or-unsupported:
           working_directory: << parameters.destination >>
           binary: sensuctl
           supported: << parameters.supports_cli >>
+          platform: << parameters.platform >>
       - verify-binary:
           working_directory: << parameters.destination >>
           binary: sensu-agent
+          platform: << parameters.platform >>
   docker-run-command:
     parameters:
       image:
@@ -299,10 +537,54 @@ jobs:
           tag: << parameters.tag >>
           path: << parameters.path >>
           extra_build_args: --label "version=$SENSU_VERSION" --label "release=$BUILD_NUMBER" --push --platform "<< parameters.platforms >>"
+  build-docker-windows:
+    executor:
+      name: windows/default
+      shell: powershell.exe
+    parameters:
+      path:
+        type: string
+      tag:
+        type: string
+    steps:
+      - checkout
+      - docker-login:
+          platform: windows
+      - run: docker build -f << parameters.path >> -t << parameters.tag >> --push .
 
 workflows:
   docker:
     jobs:
+      - build-docker-windows:
+          path: dockerfiles/windows-nanoserver-20H2
+          tag: "sensu/sensu-ci:windows-nanoserver-20H2-latest"
+          pre-steps:
+            - checkout
+            - docker-login:
+                platform: windows
+            - create-target-directory:
+                platform: windows
+            - setenv-target-workflow:
+                platform: windows
+            - setup-metadata:
+                platform: windows
+                target: windows_amd64
+            - fetch-licenses:
+                platform: windows
+            - fetch-and-verify-binaries:
+                job: build-windows_amd64
+                target: windows_amd64
+                destination: target/windows/amd64
+                platform: windows
+          post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-windows-nanoserver-20H2"
+                command: sensu-agent version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-windows-nanoserver-20H2"
+                command: sensuctl version
       - build-docker:
           name: build-alpine
           platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x

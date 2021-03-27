@@ -50,7 +50,7 @@ while true; do
     createdPipelines=$(echo $pipelines | jq -r \
         '[.items[] | select(.state == "created")]')
 
-    if [ "x${createdPipelines}" = "[]" ]; then
+    if [ "x${createdPipelines}" = "x[]" ]; then
         if [ "x${nextPageToken}" = "x" ]; then
             break
         fi
