@@ -193,7 +193,7 @@ commands:
           working_directory: << parameters.working_directory >>
           command: >
             printf "#!/bin/sh\necho \"<< parameters.binary >> is not
-            available for this platform\nexit 1\"\"" > << parameters.binary >>
+            available for this platform\nexit 1\"" > << parameters.binary >>
       - run:
           name: Add execute bit to << parameters.working_directory >>/<< parameters.binary >>
           working_directory: << parameters.working_directory >>
