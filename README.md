@@ -26,13 +26,13 @@ flag to build the images.
 ### Alpine Example
 
 ``` sh
-docker buildx build --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
+docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
 ```
 
 ### RHEL 7 Example
 
 ``` sh
-docker buildx build --file dockerfiles/redhat7/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
+docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
 ```
 
 
