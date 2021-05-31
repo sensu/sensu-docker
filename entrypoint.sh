@@ -8,6 +8,18 @@ called_path=${SENSU}/bin/${called}
 : ${HOSTNAME:=$(hostname)}
 : ${SENSU_HOSTNAME:=$HOSTNAME}
 
+backend_init() {
+    echo "== running backend init..."
+    set -e
+    ${called_path} init --wait
+    INIT_RC=$?
+    set +e
+    if [ "x$INIT_RC" != "x0" ] && [ "x$INIT_RC" != "x3" ]; then
+    echo "== backend init failed - exiting..."
+        exit 1
+    fi
+}
+
 if [ $called = "sensu-agent" ]; then
     : ${SENSU_BACKEND_URL:=ws://${SENSU_HOSTNAME}:8081}
 
@@ -32,30 +44,7 @@ elif [ $called = "sensu-backend" ]; then
     export SENSU_BACKEND_ETCD_LISTEN_CLIENT_URLS
     export SENSU_BACKEND_ETCD_LISTEN_PEER_URLS
 
-    # wait for etcd to become available
-    # TODO(JK): move this logic into the backend init logic so we don't need to
-    # determine which host & port to check in this script.
-    while /bin/true; do
-        echo "== waiting for ${SENSU_HOSTNAME}:${WAIT_PORT} to become available before running backend-init..."
-        NC_RC=0
-        set -e
-        nc -z $SENSU_HOSTNAME $WAIT_PORT || NC_RC=$?
-        set +e
-        if [ "x$NC_RC" = "x0" ]; then
-            echo "== running backend init..."
-            set -e
-            ${called_path} init
-            INIT_RC=$?
-            set +e
-            if [ "x$INIT_RC" != "x0" ] && [ "x$INIT_RC" != "x3" ]; then
-                echo "== backend init failed - exiting..."
-                exit 1
-            fi
-            break
-        else
-            sleep 1.0
-        fi
-    done &
+    backend_init &
 fi
 
 ${called_path} $@
