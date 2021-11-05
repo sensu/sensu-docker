@@ -1,6 +1,7 @@
 FROM registry.access.redhat.com/rhel7/rhel as etcdctl-fetch
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+ARG ETCD_VERSION="3.5.0"
 
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
@@ -10,8 +11,8 @@ RUN case "$TARGETPLATFORM" in \
 esac; \
 case "$TARGETPLATFORM" in \
   "linux/amd64" | "linux/ppc64le") \
-  export ETCD_NAME="etcd-v3.3.9-linux-${ETCD_ARCH}" && \
-  curl -fsSLO https://github.com/coreos/etcd/releases/download/v3.3.9/$ETCD_NAME.tar.gz && \
+  export ETCD_NAME="etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}" && \
+  curl -fsSLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/$ETCD_NAME.tar.gz && \
   tar xvf $ETCD_NAME.tar.gz --strip-components 1 $ETCD_NAME/etcd $ETCD_NAME/etcdctl \
   ;; \
   *) \
