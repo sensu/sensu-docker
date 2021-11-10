@@ -76,7 +76,7 @@ RUN chown -R sensu:sensu /var/lib/sensu
 RUN chown -R sensu:sensu /var/log/sensu
 RUN chown -R sensu:sensu /var/run/sensu
 
-// https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
 RUN apk add --no-cache tzdata
 
 CMD ["sensu-backend"]
