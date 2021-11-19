@@ -49,7 +49,10 @@ VOLUME /var/lib/sensu
 EXPOSE 2379 2380 8080 8081 3000
 
 RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
-RUN apk add --no-cache ca-certificates dumb-init && \
+RUN apk add --no-cache \
+    ca-certificates \
+    dumb-init \
+    tzdata && \ # https://wiki.alpinelinux.org/wiki/Setting_the_timezone
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-backend && \
     ln -sf /opt/sensu/bin/sensuctl /usr/local/bin/sensuctl
@@ -75,8 +78,5 @@ RUN chown -R sensu:sensu /var/cache/sensu
 RUN chown -R sensu:sensu /var/lib/sensu
 RUN chown -R sensu:sensu /var/log/sensu
 RUN chown -R sensu:sensu /var/run/sensu
-
-# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
-RUN apk add --no-cache tzdata
 
 CMD ["sensu-backend"]
