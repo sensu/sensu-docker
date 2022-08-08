@@ -1,9 +1,12 @@
-FROM alpine:3.12 as etcdctl-fetch
+ARG ALPINE_VERSION=3.16
+FROM alpine:$ALPINE_VERSION as etcdctl-fetch
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+ARG ALPINE_VERSION
+ARG ETCD_VERSION=3.5.4
 
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/main\nhttps://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/community\n" > /etc/apk/repositories
 RUN apk add --no-cache ca-certificates curl
 
 RUN export TARGET_ARCH=$(apk --print-arch) && \
@@ -14,8 +17,8 @@ case "$TARGET_ARCH" in \
 esac; \
 case "$TARGET_ARCH" in \
   x86_64 | aarch64 | ppc64le) \
-  export ETCD_NAME="etcd-v3.3.9-linux-${ETCD_ARCH}" && \
-  curl -fsSLO https://github.com/coreos/etcd/releases/download/v3.3.9/$ETCD_NAME.tar.gz && \
+  export ETCD_NAME="etcd-v$ETCD_VERSION-linux-${ETCD_ARCH}" && \
+  curl -fsSLO https://github.com/etcd-io/etcd/releases/download/v$ETCD_VERSION/$ETCD_NAME.tar.gz && \
   tar xvf $ETCD_NAME.tar.gz --strip-components 1 $ETCD_NAME/etcd $ETCD_NAME/etcdctl \
   ;; \
   *) \
@@ -25,9 +28,10 @@ esac
 
 RUN chmod +x /etcdctl
 
-FROM alpine:3.12
+FROM alpine:$ALPINE_VERSION
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+ARG ALPINE_VERSION
 
 MAINTAINER Sensu, Inc. Engineering <engineering@sensu.io>
 
@@ -48,7 +52,7 @@ VOLUME /var/lib/sensu
 
 EXPOSE 2379 2380 8080 8081 3000
 
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v3.12/main\nhttps://alpine.global.ssl.fastly.net/alpine/v3.12/community\n" > /etc/apk/repositories
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/main\nhttps://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/community\n" > /etc/apk/repositories
 
 # tzdata: https://wiki.alpinelinux.org/wiki/Setting_the_timezone
 RUN apk add --no-cache \
