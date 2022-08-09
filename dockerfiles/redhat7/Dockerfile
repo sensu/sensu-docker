@@ -3,17 +3,17 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG ETCD_VERSION=3.5.4
 
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+RUN echo "I am running on ${BUILDPLATFORM}, building for ${TARGETPLATFORM}"
 
-RUN case "$TARGETPLATFORM" in \
+RUN case "${TARGETPLATFORM}" in \
   "linux/amd64") export ETCD_ARCH="amd64" ;; \
   "linux/ppc64le") export ETCD_ARCH="ppc64le" ;; \
 esac; \
-case "$TARGETPLATFORM" in \
+case "${TARGETPLATFORM}" in \
   "linux/amd64" | "linux/ppc64le") \
-  export ETCD_NAME="etcd-v$ETCD_VERSION-linux-${ETCD_ARCH}" && \
-  curl -fsSLO https://github.com/coreos/etcd/releases/download/v$ETCD_VERSION/$ETCD_NAME.tar.gz && \
-  tar xvf $ETCD_NAME.tar.gz --strip-components 1 $ETCD_NAME/etcd $ETCD_NAME/etcdctl \
+  export ETCD_NAME="etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}" && \
+  curl -fsSLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/${ETCD_NAME}.tar.gz && \
+  tar xvf ${ETCD_NAME}.tar.gz --strip-components 1 ${ETCD_NAME}/etcd ${ETCD_NAME}/etcdctl \
   ;; \
   *) \
   printf "#!/bin/sh\necho \"etcdctl is not available for platform: ${TARGETPLATFORM}\"\n" > /etcdctl \
