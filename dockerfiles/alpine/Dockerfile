@@ -1,25 +1,25 @@
 ARG ALPINE_VERSION=3.16
-FROM alpine:$ALPINE_VERSION as etcdctl-fetch
+FROM alpine:${ALPINE_VERSION} as etcdctl-fetch
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG ALPINE_VERSION
 ARG ETCD_VERSION=3.5.4
 
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/main\nhttps://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/community\n" > /etc/apk/repositories
+RUN echo "I am running on ${BUILDPLATFORM}, building for ${TARGETPLATFORM}"
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/main\nhttps://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/community\n" > /etc/apk/repositories
 RUN apk add --no-cache ca-certificates curl
 
 RUN export TARGET_ARCH=$(apk --print-arch) && \
-case "$TARGET_ARCH" in \
+case "${TARGET_ARCH}" in \
   x86_64) export ETCD_ARCH="amd64" ;; \
   aarch64) export ETCD_ARCH="arm64" ;; \
   ppc64le) export ETCD_ARCH="ppc64le" ;; \
 esac; \
-case "$TARGET_ARCH" in \
+case "${TARGET_ARCH}" in \
   x86_64 | aarch64 | ppc64le) \
-  export ETCD_NAME="etcd-v$ETCD_VERSION-linux-${ETCD_ARCH}" && \
-  curl -fsSLO https://github.com/etcd-io/etcd/releases/download/v$ETCD_VERSION/$ETCD_NAME.tar.gz && \
-  tar xvf $ETCD_NAME.tar.gz --strip-components 1 $ETCD_NAME/etcd $ETCD_NAME/etcdctl \
+  export ETCD_NAME="etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}" && \
+  curl -fsSLO https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/${ETCD_NAME}.tar.gz && \
+  tar xvf ${ETCD_NAME}.tar.gz --strip-components 1 ${ETCD_NAME}/etcd ${ETCD_NAME}/etcdctl \
   ;; \
   *) \
   printf "#!/bin/sh\necho \"etcdctl is not available for platform: ${TARGETPLATFORM}\"\n" > /etcdctl \
@@ -28,7 +28,7 @@ esac
 
 RUN chmod +x /etcdctl
 
-FROM alpine:$ALPINE_VERSION
+FROM alpine:${ALPINE_VERSION}
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG ALPINE_VERSION
@@ -52,7 +52,7 @@ VOLUME /var/lib/sensu
 
 EXPOSE 2379 2380 8080 8081 3000
 
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/main\nhttps://alpine.global.ssl.fastly.net/alpine/v$ALPINE_VERSION/community\n" > /etc/apk/repositories
+RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/main\nhttps://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/community\n" > /etc/apk/repositories
 
 # tzdata: https://wiki.alpinelinux.org/wiki/Setting_the_timezone
 RUN apk add --no-cache \
@@ -65,9 +65,9 @@ RUN apk add --no-cache \
 
 COPY --from=etcdctl-fetch etcdctl /usr/local/bin/etcdctl
 
-COPY target/$TARGETPLATFORM/sensu-backend /opt/sensu/bin/sensu-backend
-COPY target/$TARGETPLATFORM/sensu-agent /opt/sensu/bin/sensu-agent
-COPY target/$TARGETPLATFORM/sensuctl /opt/sensu/bin/sensuctl
+COPY target/${TARGETPLATFORM}/sensu-backend /opt/sensu/bin/sensu-backend
+COPY target/${TARGETPLATFORM}/sensu-agent /opt/sensu/bin/sensu-agent
+COPY target/${TARGETPLATFORM}/sensuctl /opt/sensu/bin/sensuctl
 COPY entrypoint.sh /opt/sensu/bin/entrypoint.sh
 
 RUN addgroup -S sensu
