@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  docker: circleci/docker@1.4.0
+  docker: circleci/docker@2.7.1
   buildx: sensu/docker-buildx@1.1.1
 
 parameters:
@@ -281,7 +281,7 @@ jobs:
   build-docker:
     executor:
       name: docker/machine
-      image: "ubuntu-2004:202101-01"
+      image: "default"
       dlc: true
     parameters:
       platforms:
@@ -290,7 +290,7 @@ jobs:
         type: string
       image:
         type: string
-        default: "sensu/sensu-ci"
+        default: "sensuci/pipeline"
       tag:
         type: string
     steps:
@@ -350,15 +350,15 @@ workflows:
                 target: linux_s390x
           post-steps:
             - docker-run-command:
-                image: sensu/sensu-ci
+                image: sensuci/pipeline
                 tag: "$TARGET_REVISION-alpine"
                 command: sensu-agent version
             - docker-run-command:
-                image: sensu/sensu-ci
+                image: sensuci/pipeline
                 tag: "$TARGET_REVISION-alpine"
                 command: sensu-backend version
             - docker-run-command:
-                image: sensu/sensu-ci
+                image: sensuci/pipeline
                 tag: "$TARGET_REVISION-alpine"
                 command: sensuctl version
       - build-docker:
@@ -382,14 +382,14 @@ workflows:
                 supports_backend: true
           post-steps:
             - docker-run-command:
-                image: sensu/sensu-ci
+                image: sensuci/pipeline
                 tag: "$TARGET_REVISION-rhel7"
                 command: sensu-agent version
             - docker-run-command:
-                image: sensu/sensu-ci
+                image: sensuci/pipeline
                 tag: "$TARGET_REVISION-rhel7"
                 command: sensu-backend version
             - docker-run-command:
-                image: sensu/sensu-ci
+                image: sensuci/pipeline
                 tag: "$TARGET_REVISION-rhel7"
                 command: sensuctl version
