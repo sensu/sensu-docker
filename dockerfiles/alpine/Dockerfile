@@ -70,8 +70,8 @@ COPY target/${TARGETPLATFORM}/sensu-agent /opt/sensu/bin/sensu-agent
 COPY target/${TARGETPLATFORM}/sensuctl /opt/sensu/bin/sensuctl
 COPY entrypoint.sh /opt/sensu/bin/entrypoint.sh
 
-RUN addgroup -S sensu
-RUN adduser -DHS sensu -G sensu -h /var/lib/sensu
+RUN addgroup -S -g 10001 sensu
+RUN adduser -DHS -u 10001 sensu -G sensu -h /var/lib/sensu
 
 RUN mkdir -pv /etc/sensu
 RUN mkdir -pv /var/cache/sensu
