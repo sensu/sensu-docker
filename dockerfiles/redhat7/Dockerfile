@@ -71,7 +71,8 @@ COPY --from=etcdctl-fetch etcdctl /usr/local/bin/etcdctl
 COPY --from=rhel-tools /usr/lib64/libpcap.so.1 /usr/lib64/libpcap.so.1
 COPY --from=rhel-tools /usr/bin/nc /usr/local/bin/nc
 
-RUN adduser -rd /var/lib/sensu -s /bin/nologin sensu
+RUN groupadd -g 10001 sensu
+RUN useradd -r -u 10001 -g sensu -d /var/lib/sensu -s /bin/nologin sensu
 
 RUN mkdir -pv /etc/sensu
 RUN mkdir -pv /var/cache/sensu
