@@ -1,32 +1,24 @@
-ARG ALPINE_VERSION=3.20
-FROM alpine:${ALPINE_VERSION} as etcdctl-fetch
+ARG ALPINE_VERSION=3.24
+FROM --platform=$BUILDPLATFORM golang:1.27.4-alpine3.24 AS etcdctl-build
 ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-ARG ALPINE_VERSION
-ARG ETCD_VERSION=3.5.4
+ARG TARGETARCH
+ARG ETCD_VERSION=3.7.3
 
-RUN echo "I am running on ${BUILDPLATFORM}, building for ${TARGETPLATFORM}"
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/main\nhttps://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/community\n" > /etc/apk/repositories
-RUN apk add --no-cache ca-certificates curl
-
-RUN export TARGET_ARCH=$(apk --print-arch) && \
-case "${TARGET_ARCH}" in \
-  x86_64) export ETCD_ARCH="amd64" ;; \
-  aarch64) export ETCD_ARCH="arm64" ;; \
-  ppc64le) export ETCD_ARCH="ppc64le" ;; \
-esac; \
-case "${TARGET_ARCH}" in \
-  x86_64 | aarch64 | ppc64le) \
-  export ETCD_NAME="etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}" && \
-  curl -fsSLO https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/${ETCD_NAME}.tar.gz && \
-  tar xvf ${ETCD_NAME}.tar.gz --strip-components 1 ${ETCD_NAME}/etcd ${ETCD_NAME}/etcdctl \
-  ;; \
-  *) \
-  printf "#!/bin/sh\necho \"etcdctl is not available for platform: ${TARGETPLATFORM}\"\n" > /etcdctl \
-  ;; \
-esac
-
-RUN chmod +x /etcdctl
+RUN apk add --no-cache ca-certificates curl && \
+    mkdir /src && \
+    curl -fsSLo /tmp/etcd.tar.gz "https://github.com/etcd-io/etcd/archive/refs/tags/v${ETCD_VERSION}.tar.gz" && \
+    tar -xzf /tmp/etcd.tar.gz --strip-components=1 -C /src
+WORKDIR /src/etcdctl
+RUN go mod edit -toolchain=go1.27.4 -require=golang.org/x/net@v0.63.0 && \
+    case "${TARGETARCH}" in \
+      amd64 | arm64 | ppc64le) \
+        GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build -mod=mod -trimpath -o /etcdctl . \
+        ;; \
+      *) \
+        printf '#!/bin/sh\necho "etcdctl is not available for platform: %s"\n' "${TARGETPLATFORM}" > /etcdctl \
+        ;; \
+    esac && \
+    chmod +x /etcdctl
 
 FROM alpine:${ALPINE_VERSION}
 ARG TARGETPLATFORM
@@ -52,18 +44,19 @@ VOLUME /var/lib/sensu
 
 EXPOSE 2379 2380 8080 8081 3000
 
-RUN echo -e "https://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/main\nhttps://alpine.global.ssl.fastly.net/alpine/v${ALPINE_VERSION}/community\n" > /etc/apk/repositories
+RUN echo -e "https://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/main\nhttps://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/community\n" > /etc/apk/repositories
 
 # tzdata: https://wiki.alpinelinux.org/wiki/Setting_the_timezone
 RUN apk add --no-cache \
     ca-certificates \
     dumb-init \
-    tzdata && \
+    tzdata \
+    'zlib>=1.4-r0' && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
     ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-backend && \
     ln -sf /opt/sensu/bin/sensuctl /usr/local/bin/sensuctl
 
-COPY --from=etcdctl-fetch etcdctl /usr/local/bin/etcdctl
+COPY --from=etcdctl-build /etcdctl /usr/local/bin/etcdctl
 
 COPY target/${TARGETPLATFORM}/sensu-backend /opt/sensu/bin/sensu-backend
 COPY target/${TARGETPLATFORM}/sensu-agent /opt/sensu/bin/sensu-agent
