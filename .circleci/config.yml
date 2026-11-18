@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  docker: circleci/docker@2.7.1
+  docker: circleci/docker@4.0.2
   buildx: sensu/docker-buildx@1.1.1
 
 parameters:
@@ -298,7 +298,11 @@ jobs:
           image: << parameters.image >>
           tag: << parameters.tag >>
           path: << parameters.path >>
-          extra_build_args: --label "version=$SENSU_VERSION" --label "release=$BUILD_NUMBER" --push --platform "<< parameters.platforms >>"
+          extra_build_args: >-
+            --label=version=$SENSU_VERSION
+            --label=release=$BUILD_NUMBER
+            --push
+            --platform=<< parameters.platforms >>
 
 workflows:
   docker:
