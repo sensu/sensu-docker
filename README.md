@@ -37,8 +37,8 @@ build_args=(
   --build-arg GO_VERSION=1.27.4
   --build-arg ALPINE_VERSION=3.24
   --build-arg ETCD_VERSION=3.6.13
-  --build-arg ETCD_SOURCE_REVISION=6dfeec38b75ff0d8712972e543194377b8b41c32
-  --build-arg ETCD_SOURCE_SHA256=bb01e04d13cd31ed67ec5478669e5555279be759ae267a8ed7ed7f7df7b09dd0
+  --build-arg ETCD_SOURCE_REVISION=607cf99bfe15fac97980ac560371ed5008779109
+  --build-arg ETCD_SOURCE_SHA256=b5a23bf0483bde45ff737a1e77df848909415ce68d2cb191927dd5413c283188
 )
 docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6 "${build_args[@]}"
 docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64 "${build_args[@]}"
