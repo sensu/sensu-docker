@@ -8,21 +8,6 @@ parameters:
   target_workflow:
     type: string
     default: ""
-  go_version:
-    type: string
-    default: "1.27.4"
-  alpine_version:
-    type: string
-    default: "3.24"
-  etcd_version:
-    type: string
-    default: "3.6.13"
-  etcd_source_revision:
-    type: string
-    default: "607cf99bfe15fac97980ac560371ed5008779109"
-  etcd_source_sha256:
-    type: string
-    default: "b5a23bf0483bde45ff737a1e77df848909415ce68d2cb191927dd5413c283188"
 
 commands:
   docker-login:
@@ -323,11 +308,6 @@ jobs:
           tag: << parameters.tag >>
           path: << parameters.path >>
           extra_build_args: >-
-            --build-arg=GO_VERSION=<< pipeline.parameters.go_version >>
-            --build-arg=ALPINE_VERSION=<< pipeline.parameters.alpine_version >>
-            --build-arg=ETCD_VERSION=<< pipeline.parameters.etcd_version >>
-            --build-arg=ETCD_SOURCE_REVISION=<< pipeline.parameters.etcd_source_revision >>
-            --build-arg=ETCD_SOURCE_SHA256=<< pipeline.parameters.etcd_source_sha256 >>
             --label=version=$SENSU_VERSION
             --label=release=$BUILD_NUMBER
             --push
@@ -386,8 +366,8 @@ workflows:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-alpine"
                 command: >-
-                  etcdctl version | grep -Fx 'etcdctl version: << pipeline.parameters.etcd_version >>' &&
-                  etcdctl version | grep -Fx 'Git SHA: << pipeline.parameters.etcd_source_revision >>'
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-alpine"
@@ -424,8 +404,8 @@ workflows:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-rhel7"
                 command: >-
-                  etcdctl version | grep -Fx 'etcdctl version: << pipeline.parameters.etcd_version >>' &&
-                  etcdctl version | grep -Fx 'Git SHA: << pipeline.parameters.etcd_source_revision >>'
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-rhel7"

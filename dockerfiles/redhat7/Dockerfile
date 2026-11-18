@@ -1,36 +1,37 @@
-ARG GO_VERSION
-ARG ALPINE_VERSION
+ARG GO_VERSION=1.27.4
+ARG ALPINE_VERSION=3.24
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS etcdctl-build
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG BUILDPLATFORM
-ARG ETCD_VERSION
-ARG ETCD_SOURCE_REVISION
-ARG ETCD_SOURCE_SHA256
+ARG ETCD_SOURCE_REVISION=1b1ef2de63da0afae672ef5ddd411c7419921c23
 
 RUN echo "Building on ${BUILDPLATFORM} for ${TARGETPLATFORM}"
 
-RUN apk add --no-cache ca-certificates coreutils curl && \
-    mkdir /src && \
-    curl -fsSLo /tmp/etcd.tar.gz "https://github.com/sensu/etcd/archive/${ETCD_SOURCE_REVISION}.tar.gz" && \
-    printf '%s  %s\n' "${ETCD_SOURCE_SHA256}" /tmp/etcd.tar.gz | sha256sum -c - && \
-    tar -xzf /tmp/etcd.tar.gz --strip-components=1 -C /src
-WORKDIR /src/etcdctl
+RUN set -eu; \
+    apk add --no-cache ca-certificates git; \
+    git clone --filter=blob:none --no-checkout https://github.com/sensu/etcd.git /src/etcd; \
+    git -C /src/etcd checkout --detach "${ETCD_SOURCE_REVISION}"; \
+    actual_revision="$(git -C /src/etcd rev-parse HEAD)"; \
+    if [ "${actual_revision}" != "${ETCD_SOURCE_REVISION}" ]; then \
+      echo "Expected etcd revision ${ETCD_SOURCE_REVISION}, got ${actual_revision}" >&2; \
+      exit 1; \
+    fi
+WORKDIR /src/etcd/etcdctl
 RUN --mount=type=cache,id=etcdctl-gomod,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,id=etcdctl-buildcache,target=/root/.cache/go-build,sharing=locked \
-    case "${TARGETARCH}" in \
-      amd64 | ppc64le) \
-        GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build \
-          -mod=readonly \
-          -trimpath \
-          -ldflags "-X=go.etcd.io/etcd/api/v3/version.Version=${ETCD_VERSION} -X=go.etcd.io/etcd/api/v3/version.GitSHA=${ETCD_SOURCE_REVISION}" \
-          -o /etcdctl . \
-        ;; \
-      *) \
-        printf '#!/bin/sh\necho "etcdctl is not available for platform: %s"\n' "${TARGETPLATFORM}" > /etcdctl \
-        ;; \
-    esac && chmod +x /etcdctl
+    set -eu; \
+    if [ "${TARGETARCH}" != "amd64" ]; then \
+      echo "RHEL 7 etcdctl is supported only on linux/amd64" >&2; \
+      exit 1; \
+    fi; \
+    GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+      -mod=readonly \
+      -trimpath \
+      -ldflags "-X=go.etcd.io/etcd/api/v3/version.GitSHA=${ETCD_SOURCE_REVISION}" \
+      -o /etcdctl .; \
+    chmod +x /etcdctl
 
 FROM registry.access.redhat.com/rhel7/rhel-tools as rhel-tools
 ARG TARGETPLATFORM
@@ -61,7 +62,6 @@ EXPOSE 2379 2380 8080 8081 3000
 
 RUN case "$TARGETPLATFORM" in \
   "linux/amd64") export DUMB_INIT_ARCH="amd64" ;; \
-  "linux/ppc64le") export DUMB_INIT_ARCH="ppc64el" ;; \
   "linux/s390x") export DUMB_INIT_ARCH="s390x" ;; \
 esac; \
 curl -L -o /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && \

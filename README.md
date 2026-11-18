@@ -7,11 +7,10 @@ This repository contains the code required to build Docker images.
 This repository requires the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/)
 feature to be installed & enabled.
 
-The Alpine and RHEL 7 Dockerfiles build `etcdctl` from the pinned Sensu etcd
-source. Builds require `GO_VERSION`, `ALPINE_VERSION`, `ETCD_VERSION`,
-`ETCD_SOURCE_REVISION`, and `ETCD_SOURCE_SHA256` build arguments. CircleCI
-provides these from the pipeline parameters in `.circleci/config.yml`; use the
-same values for local builds.
+The Alpine and RHEL 7 Dockerfiles build `etcdctl` from a pinned Sensu etcd
+revision. The Dockerfiles define defaults for the Go and Alpine versions and the
+etcd source revision; pass build arguments only when intentionally overriding
+those defaults.
 
 1. Clone this repository.
 
@@ -29,19 +28,9 @@ respective target directories.
 4. Use `docker buildx build` with the path of the Dockerfile to use and with the `--platform`
 flag to build the images.
 
-For local builds, use the same values as the pipeline parameters in
-`.circleci/config.yml`:
-
 ```sh
-build_args=(
-  --build-arg GO_VERSION=1.27.4
-  --build-arg ALPINE_VERSION=3.24
-  --build-arg ETCD_VERSION=3.6.13
-  --build-arg ETCD_SOURCE_REVISION=607cf99bfe15fac97980ac560371ed5008779109
-  --build-arg ETCD_SOURCE_SHA256=b5a23bf0483bde45ff737a1e77df848909415ce68d2cb191927dd5413c283188
-)
-docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6 "${build_args[@]}"
-docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64 "${build_args[@]}"
+docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
+docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64
 ```
 
 
