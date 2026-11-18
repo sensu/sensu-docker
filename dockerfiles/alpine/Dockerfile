@@ -1,18 +1,31 @@
-ARG ALPINE_VERSION=3.24
-FROM --platform=$BUILDPLATFORM golang:1.27.4-alpine3.24 AS etcdctl-build
+ARG GO_VERSION
+ARG ALPINE_VERSION
+
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS etcdctl-build
 ARG TARGETPLATFORM
 ARG TARGETARCH
-ARG ETCD_VERSION=3.7.3
+ARG BUILDPLATFORM
+ARG ETCD_VERSION
+ARG ETCD_SOURCE_REVISION
+ARG ETCD_SOURCE_SHA256
 
-RUN apk add --no-cache ca-certificates curl && \
+RUN echo "Building on ${BUILDPLATFORM} for ${TARGETPLATFORM}"
+
+RUN apk add --no-cache ca-certificates coreutils curl && \
     mkdir /src && \
-    curl -fsSLo /tmp/etcd.tar.gz "https://github.com/etcd-io/etcd/archive/refs/tags/v${ETCD_VERSION}.tar.gz" && \
+    curl -fsSLo /tmp/etcd.tar.gz "https://github.com/sensu/etcd/archive/${ETCD_SOURCE_REVISION}.tar.gz" && \
+    printf '%s  %s\n' "${ETCD_SOURCE_SHA256}" /tmp/etcd.tar.gz | sha256sum -c - && \
     tar -xzf /tmp/etcd.tar.gz --strip-components=1 -C /src
 WORKDIR /src/etcdctl
-RUN go mod edit -toolchain=go1.27.4 -require=golang.org/x/net@v0.63.0 && \
+RUN --mount=type=cache,id=etcdctl-gomod,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,id=etcdctl-buildcache,target=/root/.cache/go-build,sharing=locked \
     case "${TARGETARCH}" in \
       amd64 | arm64 | ppc64le) \
-        GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build -mod=mod -trimpath -o /etcdctl . \
+        GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build \
+          -mod=readonly \
+          -trimpath \
+          -ldflags "-X=go.etcd.io/etcd/api/v3/version.Version=${ETCD_VERSION} -X=go.etcd.io/etcd/api/v3/version.GitSHA=${ETCD_SOURCE_REVISION}" \
+          -o /etcdctl . \
         ;; \
       *) \
         printf '#!/bin/sh\necho "etcdctl is not available for platform: %s"\n' "${TARGETPLATFORM}" > /etcdctl \

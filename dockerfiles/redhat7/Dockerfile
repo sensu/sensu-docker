@@ -1,26 +1,36 @@
-FROM registry.access.redhat.com/rhel7/rhel as etcdctl-fetch
+ARG GO_VERSION
+ARG ALPINE_VERSION
+
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS etcdctl-build
 ARG TARGETPLATFORM
+ARG TARGETARCH
 ARG BUILDPLATFORM
-ARG ETCD_VERSION=3.7.3
+ARG ETCD_VERSION
+ARG ETCD_SOURCE_REVISION
+ARG ETCD_SOURCE_SHA256
 
-RUN echo "I am running on ${BUILDPLATFORM}, building for ${TARGETPLATFORM}"
+RUN echo "Building on ${BUILDPLATFORM} for ${TARGETPLATFORM}"
 
-RUN case "${TARGETPLATFORM}" in \
-  "linux/amd64") export ETCD_ARCH="amd64" ;; \
-  "linux/ppc64le") export ETCD_ARCH="ppc64le" ;; \
-esac; \
-case "${TARGETPLATFORM}" in \
-  "linux/amd64" | "linux/ppc64le") \
-  export ETCD_NAME="etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}" && \
-  curl -fsSLO https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/${ETCD_NAME}.tar.gz && \
-  tar xvf ${ETCD_NAME}.tar.gz --strip-components 1 ${ETCD_NAME}/etcd ${ETCD_NAME}/etcdctl \
-  ;; \
-  *) \
-  printf "#!/bin/sh\necho \"etcdctl is not available for platform: ${TARGETPLATFORM}\"\n" > /etcdctl \
-  ;; \
-esac
-
-RUN chmod +x /etcdctl
+RUN apk add --no-cache ca-certificates coreutils curl && \
+    mkdir /src && \
+    curl -fsSLo /tmp/etcd.tar.gz "https://github.com/sensu/etcd/archive/${ETCD_SOURCE_REVISION}.tar.gz" && \
+    printf '%s  %s\n' "${ETCD_SOURCE_SHA256}" /tmp/etcd.tar.gz | sha256sum -c - && \
+    tar -xzf /tmp/etcd.tar.gz --strip-components=1 -C /src
+WORKDIR /src/etcdctl
+RUN --mount=type=cache,id=etcdctl-gomod,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,id=etcdctl-buildcache,target=/root/.cache/go-build,sharing=locked \
+    case "${TARGETARCH}" in \
+      amd64 | ppc64le) \
+        GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build \
+          -mod=readonly \
+          -trimpath \
+          -ldflags "-X=go.etcd.io/etcd/api/v3/version.Version=${ETCD_VERSION} -X=go.etcd.io/etcd/api/v3/version.GitSHA=${ETCD_SOURCE_REVISION}" \
+          -o /etcdctl . \
+        ;; \
+      *) \
+        printf '#!/bin/sh\necho "etcdctl is not available for platform: %s"\n' "${TARGETPLATFORM}" > /etcdctl \
+        ;; \
+    esac && chmod +x /etcdctl
 
 FROM registry.access.redhat.com/rhel7/rhel-tools as rhel-tools
 ARG TARGETPLATFORM
@@ -67,7 +77,7 @@ COPY target/$TARGETPLATFORM/sensu-agent /opt/sensu/bin/sensu-agent
 COPY target/$TARGETPLATFORM/sensuctl /opt/sensu/bin/sensuctl
 COPY entrypoint.sh /opt/sensu/bin/entrypoint.sh
 
-COPY --from=etcdctl-fetch etcdctl /usr/local/bin/etcdctl
+COPY --from=etcdctl-build /etcdctl /usr/local/bin/etcdctl
 COPY --from=rhel-tools /usr/lib64/libpcap.so.1 /usr/lib64/libpcap.so.1
 COPY --from=rhel-tools /usr/bin/nc /usr/local/bin/nc
 

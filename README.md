@@ -7,6 +7,12 @@ This repository contains the code required to build Docker images.
 This repository requires the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/)
 feature to be installed & enabled.
 
+The Alpine and RHEL 7 Dockerfiles build `etcdctl` from the pinned Sensu etcd
+source. Builds require `GO_VERSION`, `ALPINE_VERSION`, `ETCD_VERSION`,
+`ETCD_SOURCE_REVISION`, and `ETCD_SOURCE_SHA256` build arguments. CircleCI
+provides these from the pipeline parameters in `.circleci/config.yml`; use the
+same values for local builds.
+
 1. Clone this repository.
 
 2. Create target directories for each of the platforms you wish to build Docker images
@@ -23,16 +29,19 @@ respective target directories.
 4. Use `docker buildx build` with the path of the Dockerfile to use and with the `--platform`
 flag to build the images.
 
-### Alpine Example
+For local builds, use the same values as the pipeline parameters in
+`.circleci/config.yml`:
 
-``` sh
-docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
-```
-
-### RHEL 7 Example
-
-``` sh
-docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
+```sh
+build_args=(
+  --build-arg GO_VERSION=1.27.4
+  --build-arg ALPINE_VERSION=3.24
+  --build-arg ETCD_VERSION=3.6.13
+  --build-arg ETCD_SOURCE_REVISION=6dfeec38b75ff0d8712972e543194377b8b41c32
+  --build-arg ETCD_SOURCE_SHA256=bb01e04d13cd31ed67ec5478669e5555279be759ae267a8ed7ed7f7df7b09dd0
+)
+docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6 "${build_args[@]}"
+docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64 "${build_args[@]}"
 ```
 
 
@@ -89,9 +98,10 @@ The following instructions are for internal use only, for generating builds with
 The remote workflow id of the desired build. It is used to fetch the build
 artifacts from each of the required jobs in the remote workflow.
 
-When value is set to an empty string the `circleci-fetch-artifacts.sh` script
-uses the workflow id of the latest successful build for the main branch in
-our internal commercial repository.
+When value is set to an empty string, the latest successful Enterprise build
+workflow is selected by branch: `develop/*` and `release/*` Docker branches use
+the same Enterprise branch, `main` uses Enterprise `main`, and other branches
+use Enterprise `develop/6`.
 
 ## Publishing CircleCI Orbs (for internal use only)
 

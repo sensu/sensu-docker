@@ -69,6 +69,12 @@ artifact_json=$(mktemp)
 echo "created tmp file: ${artifact_json}"
 curl -fsSLH "Circle-Token: $CIRCLE_TOKEN" -o $artifact_json $job_url
 cat $artifact_json | jq .
+matching_artifacts=$(jq --arg filter "$filter" \
+    '[.items[]? | select(.path | contains($filter))] | length' "$artifact_json")
+if [ "$matching_artifacts" -eq 0 ]; then
+    echo "error: no artifacts matching '$filter' for job '$target_job'" >&2
+    exit 1
+fi
 for row in $(cat $artifact_json | jq -r ".items[] | select(.path | contains(\"$filter\")) | @base64"); do
     output_path="${destination}/$(_jq $row '.path')"
     section "downloading artifact: $(_jq $row '.path') from job: $target_job"
