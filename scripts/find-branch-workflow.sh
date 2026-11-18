@@ -35,13 +35,13 @@ while true; do
     fi
 
     pipelines=$(curl -fsSL -H "Circle-Token: $circleToken" $pipelinesURL)
-    nextPageToken=$(echo $pipelines | jq -r .next_page_token)
+    nextPageToken=$(echo $pipelines | jq -r '.next_page_token // empty')
     items=$(echo $pipelines | jq -r '.items')
 
     ((page++))
 
     if [ "x${items}" = "x[]" ]; then
-        if [ "${nextPageToken}" = "null" ]; then
+        if [ "x${nextPageToken}" = "x" ]; then
             break
         fi
         continue
@@ -77,7 +77,7 @@ while true; do
             fi
 
             workflows=$(curl -fsSL -H "Circle-Token: $circleToken" $workflowsURL)
-            wNextPageToken=$(echo $workflows | jq -r .next_page_token)
+            wNextPageToken=$(echo $workflows | jq -r '.next_page_token // empty')
 
             ((wPage++))
 
@@ -86,7 +86,7 @@ while true; do
                     select(.status == "success")]')
 
             if [ "${buildWorkflows}" = "[]" ]; then
-                if [ "${wNextPageToken}" = "null" ]; then
+                if [ "x${wNextPageToken}" = "x" ]; then
                     break
                 fi
                 continue
@@ -101,7 +101,9 @@ while true; do
         fi
     done
 
-    break
+    if [ "x${targetWorkflow}" != "x" ] || [ "x${nextPageToken}" = "x" ]; then
+        break
+    fi
 done
 
 if [ "x${targetWorkflow}" = "x" ]; then

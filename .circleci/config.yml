@@ -47,7 +47,7 @@ commands:
     parameters:
       branch:
         type: string
-        default: "main"
+        default: ""
     steps:
       - when:
           condition: << pipeline.parameters.target_workflow >>
@@ -63,11 +63,20 @@ commands:
             not: << pipeline.parameters.target_workflow >>
           steps:
             - run:
-                name: Find target workflow for << parameters.branch >> branch
+                name: Find target workflow for mapped Enterprise branch
                 environment:
                   TARGET_BRANCH: << parameters.branch >>
                 command: |
-                  ./scripts/find-branch-workflow.sh > workflow
+                  branch="${TARGET_BRANCH}"
+                  if [ -z "${branch}" ]; then
+                    case "${CIRCLE_BRANCH:-}" in
+                      develop/* | release/* | main) branch="${CIRCLE_BRANCH}" ;;
+                      *) branch="develop/6" ;;
+                    esac
+                  fi
+                  echo "Using Enterprise artifact branch: ${branch}"
+                  TARGET_BRANCH="${branch}" \
+                    ./scripts/find-branch-workflow.sh > workflow
                   echo 'export TARGET_WORKFLOW="'$(cat workflow)'"' >> $BASH_ENV
       - run:
           name: Ensure TARGET_WORKFLOW is set
@@ -356,6 +365,12 @@ workflows:
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-alpine"
+                command: >-
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-alpine"
                 command: sensu-agent version
             - docker-run-command:
                 image: sensu/sensu-ci
@@ -385,6 +400,12 @@ workflows:
                 target: linux_amd64
                 supports_backend: true
           post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel7"
+                command: >-
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
             - docker-run-command:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-rhel7"

@@ -7,6 +7,11 @@ This repository contains the code required to build Docker images.
 This repository requires the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/)
 feature to be installed & enabled.
 
+The Alpine and RHEL 7 Dockerfiles build `etcdctl` from a pinned Sensu etcd
+revision. The Dockerfiles define defaults for the Go and Alpine versions and the
+etcd source revision; pass build arguments only when intentionally overriding
+those defaults.
+
 1. Clone this repository.
 
 2. Create target directories for each of the platforms you wish to build Docker images
@@ -23,16 +28,9 @@ respective target directories.
 4. Use `docker buildx build` with the path of the Dockerfile to use and with the `--platform`
 flag to build the images.
 
-### Alpine Example
-
-``` sh
-docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
-```
-
-### RHEL 7 Example
-
-``` sh
-docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v6
+```sh
+docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
+docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64
 ```
 
 
@@ -89,9 +87,10 @@ The following instructions are for internal use only, for generating builds with
 The remote workflow id of the desired build. It is used to fetch the build
 artifacts from each of the required jobs in the remote workflow.
 
-When value is set to an empty string the `circleci-fetch-artifacts.sh` script
-uses the workflow id of the latest successful build for the main branch in
-our internal commercial repository.
+When value is set to an empty string, the latest successful Enterprise build
+workflow is selected by branch: `develop/*` and `release/*` Docker branches use
+the same Enterprise branch, `main` uses Enterprise `main`, and other branches
+use Enterprise `develop/6`.
 
 ## Publishing CircleCI Orbs (for internal use only)
 
