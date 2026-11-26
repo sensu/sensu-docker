@@ -37,8 +37,6 @@ FROM registry.access.redhat.com/ubi8/ubi:8.10
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
-MAINTAINER Sensu, Inc. Engineering <engineering@sensu.io>
-
 LABEL name="sensu/sensu-rhel8" \
       maintainer="engineering@sensu.io" \
       vendor="Sensu, Inc." \
@@ -62,7 +60,7 @@ RUN case "$TARGETPLATFORM" in \
   "linux/amd64") export DUMB_INIT_ARCH="amd64" ;; \
   "linux/s390x") export DUMB_INIT_ARCH="s390x" ;; \
 esac; \
-curl -L -o /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && \
+curl -fL -o /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && \
 chmod +x /usr/bin/dumb-init
 
 RUN ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
