@@ -23,7 +23,7 @@ RUN --mount=type=cache,id=etcdctl-gomod,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,id=etcdctl-buildcache,target=/root/.cache/go-build,sharing=locked \
     set -eu; \
     if [ "${TARGETARCH}" != "amd64" ]; then \
-      echo "RHEL 7 etcdctl is supported only on linux/amd64" >&2; \
+      echo "RHEL 10 etcdctl is supported only on linux/amd64" >&2; \
       exit 1; \
     fi; \
     GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
@@ -33,17 +33,11 @@ RUN --mount=type=cache,id=etcdctl-gomod,target=/go/pkg/mod,sharing=locked \
       -o /etcdctl .; \
     chmod +x /etcdctl
 
-FROM registry.access.redhat.com/rhel7/rhel-tools as rhel-tools
+FROM registry.access.redhat.com/ubi10/ubi:10.3
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
-FROM registry.access.redhat.com/rhel7/rhel
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-
-MAINTAINER Sensu, Inc. Engineering <engineering@sensu.io>
-
-LABEL name="sensu/sensu-rhel" \
+LABEL name="sensu/sensu-rhel10" \
       maintainer="engineering@sensu.io" \
       vendor="Sensu, Inc." \
       license="All Rights Reserved. For details, visit https://sensu.io/sensu-license" \
@@ -60,11 +54,13 @@ VOLUME /var/lib/sensu
 
 EXPOSE 2379 2380 8080 8081 3000
 
+RUN dnf install -y libpcap nmap-ncat curl && dnf clean all
+
 RUN case "$TARGETPLATFORM" in \
   "linux/amd64") export DUMB_INIT_ARCH="amd64" ;; \
   "linux/s390x") export DUMB_INIT_ARCH="s390x" ;; \
 esac; \
-curl -L -o /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && \
+curl -fL -o /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && \
 chmod +x /usr/bin/dumb-init
 
 RUN ln -sf /opt/sensu/bin/entrypoint.sh /usr/local/bin/sensu-agent && \
@@ -78,8 +74,6 @@ COPY target/$TARGETPLATFORM/sensuctl /opt/sensu/bin/sensuctl
 COPY entrypoint.sh /opt/sensu/bin/entrypoint.sh
 
 COPY --from=etcdctl-build /etcdctl /usr/local/bin/etcdctl
-COPY --from=rhel-tools /usr/lib64/libpcap.so.1 /usr/lib64/libpcap.so.1
-COPY --from=rhel-tools /usr/bin/nc /usr/local/bin/nc
 
 RUN groupadd -g 10001 sensu
 RUN useradd -r -u 10001 -g sensu -d /var/lib/sensu -s /bin/nologin sensu

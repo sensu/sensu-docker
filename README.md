@@ -7,10 +7,24 @@ This repository contains the code required to build Docker images.
 This repository requires the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/)
 feature to be installed & enabled.
 
-The Alpine and RHEL 7 Dockerfiles build `etcdctl` from a pinned Sensu etcd
-revision. The Dockerfiles define defaults for the Go and Alpine versions and the
-etcd source revision; pass build arguments only when intentionally overriding
-those defaults.
+RHEL 7 support has been removed. Its image is end of life and is no longer built.
+
+The Alpine, RHEL 8, RHEL 9 and RHEL 10 Dockerfiles build `etcdctl` from a
+pinned Sensu etcd revision. The Dockerfiles define defaults for the Go and Alpine
+versions and the etcd source revision; pass build arguments only when
+intentionally overriding those defaults.
+
+| Image | Dockerfile | Base image | Platforms |
+| --- | --- | --- | --- |
+| Alpine | `dockerfiles/alpine/Dockerfile` | `alpine:3.24` | linux/386, linux/amd64, linux/arm/v6, linux/arm/v7, linux/arm64, linux/ppc64le, linux/s390x |
+| RHEL 8 | `dockerfiles/ubi8/Dockerfile` | `registry.access.redhat.com/ubi8/ubi:8.10` | linux/amd64 |
+| RHEL 9 | `dockerfiles/ubi9/Dockerfile` | `registry.access.redhat.com/ubi9/ubi:9.9` | linux/amd64 |
+| RHEL 10 | `dockerfiles/ubi10/Dockerfile` | `registry.access.redhat.com/ubi10/ubi:10.3` | linux/amd64 |
+
+The RHEL 8, 9 and 10 images are built on Red Hat UBI and install `libpcap`
+and `nmap-ncat` with `dnf`. RHEL 8 and 10 also install `curl`; RHEL 9 relies on
+the `curl-minimal` package that ships with its base image, because installing
+`curl` there conflicts with it.
 
 1. Clone this repository.
 
@@ -30,8 +44,16 @@ flag to build the images.
 
 ```sh
 docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
-docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64
+docker buildx build . --file dockerfiles/ubi8/Dockerfile --platform linux/amd64
+docker buildx build . --file dockerfiles/ubi9/Dockerfile --platform linux/amd64
+docker buildx build . --file dockerfiles/ubi10/Dockerfile --platform linux/amd64
 ```
+
+### Automated builds
+
+Images are built by the `docker` workflow in `.circleci/config.yml`, which builds every
+image above and pushes it to `sensu/sensu-ci`. The Enterprise build is chosen from the
+current branch, and the binaries are fetched with inline pre-steps in the config.
 
 
 ## Manually Triggered Builds (for internal use only)
