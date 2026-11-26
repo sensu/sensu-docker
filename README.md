@@ -7,10 +7,23 @@ This repository contains the code required to build Docker images.
 This repository requires the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/)
 feature to be installed & enabled.
 
-The Alpine and RHEL 7 Dockerfiles build `etcdctl` from a pinned Sensu etcd
-revision. The Dockerfiles define defaults for the Go and Alpine versions and the
-etcd source revision; pass build arguments only when intentionally overriding
-those defaults.
+The Alpine, RHEL 7, RHEL 8, RHEL 9 and RHEL 10 Dockerfiles build `etcdctl` from a
+pinned Sensu etcd revision. The Dockerfiles define defaults for the Go and Alpine
+versions and the etcd source revision; pass build arguments only when
+intentionally overriding those defaults.
+
+| Image | Dockerfile | Base image | Platforms |
+| --- | --- | --- | --- |
+| Alpine | `dockerfiles/alpine/Dockerfile` | `alpine:3.24` | linux/386, linux/amd64, linux/arm/v6, linux/arm/v7, linux/arm64, linux/ppc64le, linux/s390x |
+| RHEL 7 | `dockerfiles/redhat7/Dockerfile` | `registry.access.redhat.com/rhel7/rhel` | linux/amd64 |
+| RHEL 8 | `dockerfiles/ubi8/Dockerfile` | `registry.access.redhat.com/ubi8/ubi:8.10` | linux/amd64 |
+| RHEL 9 | `dockerfiles/ubi9/Dockerfile` | `registry.access.redhat.com/ubi9/ubi:9.9` | linux/amd64 |
+| RHEL 10 | `dockerfiles/ubi10/Dockerfile` | `registry.access.redhat.com/ubi10/ubi:10.3` | linux/amd64 |
+
+The RHEL 8, 9 and 10 images are built on Red Hat UBI and install `libpcap`
+and `nmap-ncat` with `dnf`. RHEL 8 and 10 also install `curl`; RHEL 9 relies on
+the `curl-minimal` package that ships with its base image, because installing
+`curl` there conflicts with it.
 
 1. Clone this repository.
 
@@ -31,7 +44,41 @@ flag to build the images.
 ```sh
 docker buildx build . --file dockerfiles/alpine/Dockerfile --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
 docker buildx build . --file dockerfiles/redhat7/Dockerfile --platform linux/amd64
+docker buildx build . --file dockerfiles/ubi8/Dockerfile --platform linux/amd64
+docker buildx build . --file dockerfiles/ubi9/Dockerfile --platform linux/amd64
+docker buildx build . --file dockerfiles/ubi10/Dockerfile --platform linux/amd64
 ```
+
+### Automated builds
+
+Images are built in two places, using the same steps and environment variables:
+
+- **CircleCI** (`.circleci/config.yml`): the `docker` workflow builds every image above
+  and pushes it to `sensu/sensu-ci`.
+- **GitHub Actions** (`.github/workflows/docker.yml`): runs only when started manually
+  (Actions → docker → Run workflow). It builds the five images, pushes them to Amazon
+  ECR (`921689585014.dkr.ecr.us-east-1.amazonaws.com/sensu/sensu`) with the `tag` you
+  enter, for example `6.15.0` produces `sensu/sensu:6.15.0-alpine` and `sensu/sensu:6.15.0-rhel8`,
+  then runs an Amazon Inspector scan on each pushed image. Each image's job summary shows a
+  table with CVE, package, installed and fixed versions, CVSS score, and status
+  (CRITICAL, HIGH, MEDIUM, LOW), sorted by severity. The same data is uploaded as
+  `report.md` and `results.csv` in an artifact named `inspector-<tag>-<name>`.
+  `scripts/inspector-report.sh` builds these files and can be run locally on a
+  `aws inspector2 list-findings` JSON export.
+
+The GitHub workflow calls `scripts/prepare-docker-target.sh` to fetch the Enterprise
+binaries and licenses into `target/`. CircleCI does not call this script; it fetches
+the same artifacts with its own inline pre-steps. The Enterprise build is chosen from
+the current branch in both pipelines.
+
+The GitHub workflow needs these repository secrets:
+
+- `CIRCLE_TOKEN`: reads the Enterprise build artifacts from CircleCI.
+- `AWS_ROLE_ARN`: IAM role that GitHub assumes through OIDC to push to ECR and read
+  Inspector results. The role needs `ecr:*` push permissions on `sensu/sensu` and
+  `inspector2:ListCoverage` and `inspector2:ListFindings`. No long-lived AWS keys are stored.
+
+The AWS region (`us-east-1`) and ECR repository (`sensu/sensu`) are set in the workflow `env`.
 
 
 ## Manually Triggered Builds (for internal use only)

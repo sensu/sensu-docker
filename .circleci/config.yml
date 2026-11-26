@@ -418,3 +418,117 @@ workflows:
                 image: sensu/sensu-ci
                 tag: "$TARGET_REVISION-rhel7"
                 command: sensuctl version
+      - build-docker:
+          name: build-rhel8
+          platforms: linux/amd64
+          path: dockerfiles/ubi8
+          tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-rhel8,$TARGET_REVISION-rhel8,$SENSU_VERSION-$BUILD_NUMBER-rhel8"
+          pre-steps:
+            - checkout
+            - docker-login
+            - buildx/install
+            - create-target-directory
+            - setenv-target-workflow
+            - setup-metadata:
+                target: linux_amd64
+            - fetch-licenses
+            - fetch-and-verify-binaries:
+                job: build-linux_amd64
+                destination: target/linux/amd64
+                target: linux_amd64
+                supports_backend: true
+          post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel8"
+                command: >-
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel8"
+                command: sensu-agent version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel8"
+                command: sensu-backend version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel8"
+                command: sensuctl version
+      - build-docker:
+          name: build-rhel9
+          platforms: linux/amd64
+          path: dockerfiles/ubi9
+          tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-rhel9,$TARGET_REVISION-rhel9,$SENSU_VERSION-$BUILD_NUMBER-rhel9"
+          pre-steps:
+            - checkout
+            - docker-login
+            - buildx/install
+            - create-target-directory
+            - setenv-target-workflow
+            - setup-metadata:
+                target: linux_amd64
+            - fetch-licenses
+            - fetch-and-verify-binaries:
+                job: build-linux_amd64
+                destination: target/linux/amd64
+                target: linux_amd64
+                supports_backend: true
+          post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel9"
+                command: >-
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel9"
+                command: sensu-agent version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel9"
+                command: sensu-backend version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel9"
+                command: sensuctl version
+      - build-docker:
+          name: build-rhel10
+          platforms: linux/amd64
+          path: dockerfiles/ubi10
+          tag: "$TARGET_BRANCH_NO_SLASHES-$CIRCLE_BRANCH_NO_SLASHES-rhel10,$TARGET_REVISION-rhel10,$SENSU_VERSION-$BUILD_NUMBER-rhel10"
+          pre-steps:
+            - checkout
+            - docker-login
+            - buildx/install
+            - create-target-directory
+            - setenv-target-workflow
+            - setup-metadata:
+                target: linux_amd64
+            - fetch-licenses
+            - fetch-and-verify-binaries:
+                job: build-linux_amd64
+                destination: target/linux/amd64
+                target: linux_amd64
+                supports_backend: true
+          post-steps:
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel10"
+                command: >-
+                  etcdctl version | grep -Fx 'etcdctl version: 3.6.13' &&
+                  etcdctl version | grep -Fx 'Git SHA: 1b1ef2de63da0afae672ef5ddd411c7419921c23'
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel10"
+                command: sensu-agent version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel10"
+                command: sensu-backend version
+            - docker-run-command:
+                image: sensu/sensu-ci
+                tag: "$TARGET_REVISION-rhel10"
+                command: sensuctl version
