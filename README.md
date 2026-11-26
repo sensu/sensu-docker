@@ -51,34 +51,9 @@ docker buildx build . --file dockerfiles/ubi10/Dockerfile --platform linux/amd64
 
 ### Automated builds
 
-Images are built in two places, using the same steps and environment variables:
-
-- **CircleCI** (`.circleci/config.yml`): the `docker` workflow builds every image above
-  and pushes it to `sensu/sensu-ci`.
-- **GitHub Actions** (`.github/workflows/docker.yml`): runs only when started manually
-  (Actions → docker → Run workflow). It builds the five images, pushes them to Amazon
-  ECR (`921689585014.dkr.ecr.us-east-1.amazonaws.com/sensu/sensu`) with the `tag` you
-  enter, for example `6.15.0` produces `sensu/sensu:6.15.0-alpine` and `sensu/sensu:6.15.0-rhel8`,
-  then runs an Amazon Inspector scan on each pushed image. Each image's job summary shows a
-  table with CVE, package, installed and fixed versions, CVSS score, and status
-  (CRITICAL, HIGH, MEDIUM, LOW), sorted by severity. The same data is uploaded as
-  `report.md` and `results.csv` in an artifact named `inspector-<tag>-<name>`.
-  `scripts/inspector-report.sh` builds these files and can be run locally on a
-  `aws inspector2 list-findings` JSON export.
-
-The GitHub workflow calls `scripts/prepare-docker-target.sh` to fetch the Enterprise
-binaries and licenses into `target/`. CircleCI does not call this script; it fetches
-the same artifacts with its own inline pre-steps. The Enterprise build is chosen from
-the current branch in both pipelines.
-
-The GitHub workflow needs these repository secrets:
-
-- `CIRCLE_TOKEN`: reads the Enterprise build artifacts from CircleCI.
-- `AWS_ROLE_ARN`: IAM role that GitHub assumes through OIDC to push to ECR and read
-  Inspector results. The role needs `ecr:*` push permissions on `sensu/sensu` and
-  `inspector2:ListCoverage` and `inspector2:ListFindings`. No long-lived AWS keys are stored.
-
-The AWS region (`us-east-1`) and ECR repository (`sensu/sensu`) are set in the workflow `env`.
+Images are built by the `docker` workflow in `.circleci/config.yml`, which builds every
+image above and pushes it to `sensu/sensu-ci`. The Enterprise build is chosen from the
+current branch, and the binaries are fetched with inline pre-steps in the config.
 
 
 ## Manually Triggered Builds (for internal use only)
